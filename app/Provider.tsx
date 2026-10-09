@@ -10,6 +10,7 @@ import { NotificationProvider } from '@msflib/react-notification';
 import { ThemeProvider } from '@/theme/Themeprovider';
 import { useActiveWorkspace } from '@msflib/react-shared';
 import { initMsflib } from '@/lib/application.config';
+import { ToastProvider } from '@/components/ui/toast-provider';
 
 function Modules({ children }: { children: React.ReactNode }) {
   const { status } = useAuth();
@@ -52,9 +53,11 @@ export default function Providers({ children, apiURL }: { children: React.ReactN
   return (
     <QueryClientProvider client={client}>
       <ThemeProvider>
+        <ToastProvider>
         <AuthProvider options={{ isWorkspaceScoped: false }}>
           <Modules>{children}</Modules>
         </AuthProvider>
+        </ToastProvider>
       </ThemeProvider>
     </QueryClientProvider>
   );

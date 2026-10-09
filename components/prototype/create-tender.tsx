@@ -1,4 +1,8 @@
 'use client';
+import { useAuth } from '@msflib/react-auth';
+import { useQueryClient } from '@tanstack/react-query';
+import { createTender } from '@/lib/api/tenders';
+import { useToast } from '@/components/ui/toast-provider';
 import FormBuilder from '@/components/msflib/form-builder';
 import { field } from '@/components/ui/fields';
 import DraggableList from '@msflib/react-components/draggable';
@@ -24,7 +28,6 @@ import {
 import { uid, session, notify, money } from '@/lib/prototype';
 import { Portal, Panel, Action, Field, Heading } from './portal';
 import { useData, btn, select, docs } from './common';
-import { GridFormLayout } from '../msflib/procurement-form-layout';
 
 function ReviewSection({
   icon,
@@ -82,6 +85,11 @@ function Fact({
 
 export function CreateTender() {
   const router = useRouter();
+  const auth = useAuth();
+  const toast = useToast();
+  const queryClient = useQueryClient();
+  const [publishing, setPublishing] = useState(false);
+  const [notes, setNotes] = useState('');
   const { update } = useData();
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -112,7 +120,7 @@ export function CreateTender() {
   const missing = [
     !title.trim() && 'Tender title',
     !category.trim() && 'Category',
-    !description.trim() && 'Description',
+    !location.trim() && 'Delivery / service location',
     Number(budget) <= 0 && 'Maximum budget',
     !deadline && 'Submission deadline',
     !items.some((x) => x.name.trim()) && 'At least one line item',
@@ -235,13 +243,14 @@ export function CreateTender() {
                   placeholder: 'e.g. Lagos, Nigeria',
                 },
                 {
-                  ...field('description', 'Description', 'textarea'),
+                  ...field('description', 'Description (optional)', 'textarea', false),
                   width: 100,
                   placeholder: 'Describe your procurement requirements...',
                   mData: {
                     rows: 5,
                   },
                 },
+                { ...field('notes', 'Notes (optional)', 'textarea', false), width: 100, mData: { rows: 3 } },
               ]}
               formData={{
                 title,
@@ -251,6 +260,7 @@ export function CreateTender() {
                 deadline,
                 location,
                 description,
+                notes,
               }}
               setFormData={(
                 change: React.SetStateAction<Record<string, unknown>>
@@ -263,6 +273,7 @@ export function CreateTender() {
                   deadline,
                   location,
                   description,
+                  notes,
                 };
 
                 const next =
@@ -275,6 +286,7 @@ export function CreateTender() {
                 setDeadline(String(next.deadline ?? ''));
                 setLocation(String(next.location ?? ''));
                 setDescription(String(next.description ?? ''));
+                setNotes(String(next.notes ?? ''));
               }}
               onSubmit={() => {}}
             />
@@ -354,15 +366,24 @@ export function CreateTender() {
                       )
                     }
                   />
-                  <Field
-                    label="Unit"
-                    value={item.unit}
-                    onChange={(v) =>
-                      setItems((p) =>
-                        p.map((x, j) => (i === j ? { ...x, unit: v } : x))
-                      )
-                    }
-                  />
+                  <label className="block text-sm font-medium">
+                    Unit
+                    <select
+                      className={`${select} mt-1.5`}
+                      value={item.unit}
+                      onChange={(event) =>
+                        setItems((previous) =>
+                          previous.map((entry, index) =>
+                            index === i ? { ...entry, unit: event.target.value } : entry
+                          )
+                        )
+                      }
+                    >
+                      {['units', 'pieces', 'sets', 'pairs', 'packs', 'boxes', 'cartons', 'bags', 'rolls', 'kg', 'tonnes', 'litres', 'metres', 'square metres', 'cubic metres', 'hours', 'days', 'months', 'lots'].map((unit) => (
+                        <option key={unit} value={unit}>{unit}</option>
+                      ))}
+                    </select>
+                  </label>
                 </div>
               </div>
             ))}
@@ -640,6 +661,7 @@ export function CreateTender() {
           <button
             type="button"
             className={btn}
+            disabled={publishing}
             onClick={() =>
               step === 0 ? router.push('/dashboard') : setStep((s) => s - 1)
             }
@@ -650,13 +672,36 @@ export function CreateTender() {
             <Action onClick={() => setStep((s) => s + 1)}>Continue</Action>
           ) : (
             <Action
-              disabled={missing.length > 0}
-              onClick={() => {
+              disabled={missing.length > 0 || publishing}
+              onClick={async () => {
+                if (publishing) return;
                 try {
                   positiveAmount(budget);
                   futureDate(deadline);
                   for (const item of items.filter((x) => x.name.trim()))
                     positiveAmount(item.quantity);
+                  if (missing.length) throw new Error(`Complete: ${missing.join(', ')}.`);
+                  if (auth.status === 'authenticated') {
+                    setError('');
+                    setPublishing(true);
+                    await createTender({
+                      title: title.trim(),
+                      category: category.trim(),
+                      procurement_type: kind,
+                      maximum_budget: Number(budget),
+                      submission_deadline: new Date(deadline).toISOString(),
+                      delivery_location: location.trim(),
+                      optional_description: description.trim(),
+                      items: filledItems.map((entry) => ({ item: entry.name.trim(), quantity: entry.quantity, unit: entry.unit })),
+                      product_requirements: filledReqs.map((entry) => ({ requirement_name: entry.label.trim(), value: entry.value.trim() })),
+                      required_documents: selected.map((name) => ({ name, description: '' })),
+                      optional_notes: notes.trim(),
+                    });
+                    await queryClient.invalidateQueries({ queryKey: ['procureguard', 'tenders'] });
+                    toast('Tender published successfully.');
+                    router.push('/dashboard');
+                    return;
+                  }
                   if (!session()) throw new Error('Sign in before publishing.');
                   setError('');
                   const id = uid();
@@ -682,15 +727,18 @@ export function CreateTender() {
                         notify(d, a.id, `New public tender published: ${title}`)
                       );
                   });
+                  toast('Tender published successfully.');
                   router.push(`/tenders/${id}`);
                 } catch (e) {
-                  setError(
-                    e instanceof Error ? e.message : 'Could not save tender.'
-                  );
+                  const message = e instanceof Error ? e.message : 'Could not save tender.';
+                  setError(message);
+                  toast(message, 'error');
+                } finally {
+                  setPublishing(false);
                 }
               }}
             >
-              Publish tender
+              {publishing ? 'Publishing…' : 'Publish tender'}
             </Action>
           )}
         </div>

@@ -1,4 +1,6 @@
 'use client';
+import { getPostLoginPath } from '@/lib/api/onboarding';
+import { useToast } from '@/components/ui/toast-provider';
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -12,20 +14,30 @@ import { Panel } from './portal';
 import { useData } from './common';
 import { field, submit } from '@/components/ui/fields';
 
-export function AuthScreen({ mode, initialLive = false }: { mode: 'login' | 'register'; initialLive?: boolean }) {
+export function AuthScreen({ mode, initialLive = false, initialRole = 'buyer' }: { mode: 'login' | 'register'; initialLive?: boolean; initialRole?: Role }) {
   const router = useRouter();
   const auth = useAuth();
+  const notify = useToast();
   const { db, update } = useData();
 
-  const [role, setRole] = useState<Role>('buyer');
+  const [role, setRole] = useState<Role>(initialRole);
   const [live, setLive] = useState(initialLive);
 
   const [values, setValues] = useState<Record<string, unknown>>({});
-  const [error, setError] = useState('');
-  const [message, setMessage] = useState('');
+  const [error, setErrorState] = useState('');
+  function setError(value: string) {
+    setErrorState(value);
+    if (value) notify(value, 'error');
+  }
+  const [message, setMessageState] = useState('');
+  function setMessage(value: string) {
+    setMessageState(value);
+    if (value) notify(value, 'success');
+  }
 
   function enter(id: string, role: Role, onboarded: boolean) {
     login(id);
+    notify(mode === 'register' ? 'Account created successfully.' : 'Signed in successfully.');
 
     router.push(
       !onboarded
@@ -182,7 +194,9 @@ export function AuthScreen({ mode, initialLive = false }: { mode: 'login' | 'reg
                       password,
                     });
 
-                    router.push('/onboarding/buyer?account=live');
+                    notify('Signed in successfully.');
+                    const destination = await getPostLoginPath(role);
+                    router.replace(destination);
                   } else {
                     await auth.register({
                       email,
@@ -194,7 +208,8 @@ export function AuthScreen({ mode, initialLive = false }: { mode: 'login' | 'reg
                       },
                     });
 
-                    router.replace('/login?account=live');
+                    notify('Account created. Sign in to continue.');
+                    router.replace(`/login?account=live&role=${role}`);
                   }
 
                   return;

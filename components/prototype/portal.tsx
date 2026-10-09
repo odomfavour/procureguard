@@ -1,5 +1,7 @@
 'use client';
 import Link from 'next/link';
+import { useAuth } from '@msflib/react-auth';
+import { useToast } from '@/components/ui/toast-provider';
 import { useData } from './common';
 import { Loading } from '@/components/ui/shared';
 import { useEffect, useState } from 'react';
@@ -25,13 +27,20 @@ export function Portal({
   role: 'buyer' | 'vendor';
 }) {
   const router = useRouter();
+  const auth = useAuth();
+  const notify = useToast();
   const path = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
   const { db } = useData();
-  const account = db?.accounts.find((a) => a.id === session()) || null;
+  const isLive = auth.status === 'authenticated';
+  const account = isLive ? {
+    name: auth.me?.username || auth.me?.email || '',
+    organization: String(auth.me?.data?.organization || 'ProcureGuard'),
+    role: auth.me?.data?.account_type === 'vendor' || auth.me?.role === 'vendor' ? 'vendor' : role,
+  } : db?.accounts.find((a) => a.id === session()) || null;
   useEffect(() => {
-    if (db && (!account || account.role !== role)) router.replace('/login');
-  }, [db, account, role, router]);
+    if (auth.status !== 'loading' && db && account?.role !== role) router.replace('/login');
+  }, [db, account?.role, role, router, auth.status]);
   if (!account || account.role !== role)
     return (
       <div className="p-12 text-center text-ink-soft">
@@ -116,7 +125,13 @@ export function Portal({
             </Link>
             <button
               className="flex items-center gap-2 text-sm text-ink-soft"
-              onClick={() => {
+              onClick={async () => {
+                if (isLive) {
+                  try { await auth.logout(); } catch (error) {
+                    notify(error instanceof Error ? error.message : 'Sign out failed.', 'error');
+                    return;
+                  }
+                }
                 logout();
                 router.push('/login');
               }}
@@ -127,11 +142,7 @@ export function Portal({
           </div>
         </header>
         <div className="border-b border-line bg-brand-tint px-5 py-2 text-xs text-brand sm:px-8">
-          Demo workspace · Local browser data · AI, document verification and
-          escrow are simulated.{' '}
-          <Link href="/workspace" className="underline">
-            Connect live MSFLib →
-          </Link>
+          {isLive ? 'Signed in · Procurement lists are not yet connected to the backend.' : <>Demo workspace · Local browser data · AI, document verification and escrow are simulated.</>}
         </div>
         <main className="mx-auto max-w-6xl p-5 sm:p-8">{children}</main>
       </div>

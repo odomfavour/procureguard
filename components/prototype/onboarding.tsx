@@ -1,7 +1,10 @@
 'use client';
+import { useToast } from '@/components/ui/toast-provider';
 import FormBuilder from '@/components/msflib/form-builder';
 import { field } from '@/components/ui/fields';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { getMyOnboarding, hasCompletedOnboarding, onboardBuyer, onboardVendor, type OnboardingDetails } from '@/lib/api/onboarding';
 import { useAuth } from '@msflib/react-auth';
 import { Loading } from '@/components/ui/shared';
 import Link from 'next/link';
@@ -75,8 +78,27 @@ function ReviewRow({ label, value }: { label: string; value?: string }) {
 }
 
 export function Onboarding({ role }: { role: 'buyer' | 'vendor' }) {
-  const router = useRouter();
   const auth = useAuth();
+  const router = useRouter();
+  const existing = useQuery({
+    queryKey: ['procureguard', 'onboarding', auth.me?.id],
+    queryFn: getMyOnboarding,
+    enabled: auth.status === 'authenticated',
+    retry: false,
+  });
+  const complete = auth.status === 'authenticated' && hasCompletedOnboarding(existing.data);
+  useEffect(() => {
+    if (complete) router.replace(role === 'vendor' ? '/vendor/dashboard' : '/dashboard');
+  }, [complete, role, router]);
+  if (complete || auth.status === 'loading' || (auth.status === 'authenticated' && existing.isPending)) return <Loading />;
+  return <OnboardingForm key={`${role}-${auth.me?.id || 'demo'}`} role={role} existing={existing.data || null} loadError={existing.isError} retry={() => void existing.refetch()} />;
+}
+
+function OnboardingForm({ role, existing, loadError, retry }: { role: 'buyer' | 'vendor'; existing: OnboardingDetails | null; loadError: boolean; retry: () => void }) {
+  const router = useRouter();
+  const queryClient = useQueryClient();
+  const auth = useAuth();
+  const notify = useToast();
   const { db, update } = useData();
   const demoAccount = db?.accounts.find((x) => x.id === session());
   const isLive = auth.status === 'authenticated';
@@ -87,11 +109,18 @@ export function Onboarding({ role }: { role: 'buyer' | 'vendor' }) {
       }
     : demoAccount;
   const [step, setStep] = useState(0);
-  const [business, setBusiness] = useState('');
-  const [location, setLocation] = useState('');
-  const [categories, setCategories] = useState('');
+  const [business, setBusiness] = useState(existing?.organization_name || existing?.business_name || '');
+  const [location, setLocation] = useState(existing?.location || '');
+  const [categories, setCategories] = useState(Array.isArray(existing?.categories) ? existing.categories.join(', ') : '');
+  const [saving, setSaving] = useState(false);
+  const [uploads, setUploads] = useState<Record<string, File>>({});
+  const [gallery, setGallery] = useState<File[]>([]);
   const [files, setFiles] = useState<Record<string, string>>({});
-  const [error, setError] = useState('');
+  const [error, setErrorState] = useState('');
+  function setError(value: string) {
+    setErrorState(value);
+    if (value) notify(value, 'error');
+  }
 
   if (!a && auth.status === 'loading') return <Loading />;
 
@@ -129,6 +158,7 @@ export function Onboarding({ role }: { role: 'buyer' | 'vendor' }) {
         Complete your profile to start using ProcureGuard.
       </p>
 
+      {loadError && <p role="alert" className="mb-4 text-sm text-risk-high">Could not load existing onboarding details. <button type="button" className="underline" onClick={retry}>Retry</button></p>}
       {/* Stepper */}
       <div className="mb-2 h-1.5 overflow-hidden rounded-full bg-line">
         <div
@@ -240,12 +270,16 @@ export function Onboarding({ role }: { role: 'buyer' | 'vendor' }) {
                     className="block w-full text-xs text-ink-soft file:mr-3 file:cursor-pointer file:rounded-md file:border-0 file:bg-brand/10 file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-brand hover:file:bg-brand/20"
                     type="file"
                     accept=".pdf,.png,.jpg,.jpeg"
-                    onChange={(e) =>
-                      setFiles((p) => ({
-                        ...p,
-                        [d]: e.target.files?.[0]?.name || '',
-                      }))
-                    }
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      setFiles((previous) => ({ ...previous, [d]: file?.name || '' }));
+                      setUploads((previous) => {
+                        const next = { ...previous };
+                        if (file) next[d] = file;
+                        else delete next[d];
+                        return next;
+                      });
+                    }}
                   />
                 </label>
               );
@@ -334,21 +368,32 @@ export function Onboarding({ role }: { role: 'buyer' | 'vendor' }) {
           </div>
         )}
 
+        {isLive && role === 'vendor' && step === 2 && (
+          <label className="mt-4 block text-sm font-medium">
+            Business gallery (optional)
+            <input type="file" accept="image/*" multiple className="mt-2 block w-full text-sm" onChange={(event) => setGallery(Array.from(event.target.files || []))} />
+            <span className="mt-1 block text-xs text-ink-soft">{gallery.length} images selected</span>
+          </label>
+        )}
         {error && <p role="alert" className="mt-4 text-sm text-risk-high">{error}</p>}
         <div className="mt-6 flex justify-between border-t border-line pt-4">
           <button
             className={btn}
-            disabled={step === 0}
+            disabled={step === 0 || saving}
             onClick={() => setStep((s) => s - 1)}
           >
             Back
           </button>
           <Action
-            disabled={auth.loading.updateMe}
+            disabled={saving}
             onClick={async () => {
               setError('');
               if (!(business || a.organization).trim() || !location.trim()) {
                 setError('Enter your organization name and location.');
+                return;
+              }
+              if (role === 'vendor' && ((business || a.organization).trim().length < 2 || (business || a.organization).trim().length > 200 || location.trim().length < 2 || location.trim().length > 300 || !categoryList.length)) {
+                setError('Enter a business name (2–200 characters), location (2–300 characters), and at least one category.');
                 return;
               }
               if (step < steps.length - 1) {
@@ -357,17 +402,19 @@ export function Onboarding({ role }: { role: 'buyer' | 'vendor' }) {
               }
               if (isLive) {
                 try {
-                  await auth.updateMe({
-                    data: {
-                      ...auth.me?.data,
-                      organization: business || a.organization,
-                      location,
-                      onboarded: true,
-                    },
-                  });
-                  router.push('/dashboard');
+                  setSaving(true);
+                  if (role === 'buyer') {
+                    await onboardBuyer((business || a.organization).trim(), location.trim());
+                  } else {
+                    await onboardVendor({ businessName: (business || a.organization).trim(), location: location.trim(), categories: categoryList, documents: uploads, gallery });
+                  }
+                  await queryClient.invalidateQueries({ queryKey: ['procureguard', 'onboarding'] });
+                  notify('Onboarding completed successfully.');
+                  router.push(role === 'buyer' ? '/dashboard' : '/vendor/dashboard');
                 } catch (err) {
                   setError(err instanceof Error ? err.message : 'Could not save onboarding.');
+                } finally {
+                  setSaving(false);
                 }
                 return;
               }
@@ -381,6 +428,7 @@ export function Onboarding({ role }: { role: 'buyer' | 'vendor' }) {
                   .filter(Boolean);
                 x.onboarded = true;
               });
+              notify('Onboarding completed successfully.');
               router.push(
                 role === 'buyer' ? '/dashboard' : '/vendor/dashboard'
               );

@@ -1,4 +1,6 @@
 'use client';
+import { getPostLoginPath } from '@/lib/api/onboarding';
+import { useToast } from '@/components/ui/toast-provider';
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -11,12 +13,21 @@ import { requiredText } from '@/lib/schemas/procurement';
 type Mode = 'login' | 'register' | 'recover' | 'reset' | 'otp';
 export default function AuthScreen({ initialMode }: { initialMode: Mode }) {
   const auth = useAuth();
+  const notify = useToast();
   const router = useRouter();
   const [mode, setMode] = useState(initialMode);
   const [data, setData] = useState<Record<string, unknown>>({});
   const [code, setCode] = useState('');
-  const [message, setMessage] = useState('');
-  const [error, setError] = useState('');
+  const [message, setMessageState] = useState('');
+  function setMessage(value: string) {
+    setMessageState(value);
+    if (value) notify(value, 'success');
+  }
+  const [error, setErrorState] = useState('');
+  function setError(value: string) {
+    setErrorState(value);
+    if (value) notify(value, 'error');
+  }
   const [busy, setBusy] = useState(false);
   const [accountType, setAccountType] = useState<'buyer' | 'vendor'>('buyer');
   const titles = {
@@ -54,7 +65,9 @@ export default function AuthScreen({ initialMode }: { initialMode: Mode }) {
           email,
           password: requiredText(values.password, 'Password'),
         });
-        router.replace('/onboarding/buyer?account=live');
+        notify('Signed in successfully.');
+        const destination = await getPostLoginPath();
+        router.replace(destination);
       }
       if (mode === 'register') {
         await auth.register({
@@ -66,7 +79,8 @@ export default function AuthScreen({ initialMode }: { initialMode: Mode }) {
           },
           password: requiredText(values.password, 'Password'),
         });
-        router.replace('/login?account=live');
+        notify('Account created. Sign in to continue.');
+        router.replace(`/login?account=live&role=${accountType}`);
       }
       if (mode === 'recover') {
         await auth.recoverPassword({ email });

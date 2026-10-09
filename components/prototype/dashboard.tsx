@@ -1,5 +1,6 @@
 'use client';
 import Link from 'next/link';
+import { useAuth } from '@msflib/react-auth';
 import {
   ArrowRight,
   ClipboardList,
@@ -23,8 +24,11 @@ type Stat = {
 };
 
 export function Dashboard({ role }: { role: 'buyer' | 'vendor' }) {
-  const { db } = useData();
-  const a = db?.accounts.find((x) => x.id === session());
+  const auth = useAuth();
+  const isLive = auth.status === 'authenticated';
+  const { db: localDb } = useData();
+  const db = isLive && localDb ? { ...localDb, tenders: [], applications: [], orders: [] } : localDb;
+  const a = isLive ? { id: String(auth.me?.id), name: auth.me?.username || auth.me?.email || '' } : db?.accounts.find((x) => x.id === session());
   if (!db || !a) return null;
   const buyer = role === 'buyer';
   const tenders = buyer
@@ -73,7 +77,7 @@ export function Dashboard({ role }: { role: 'buyer' | 'vendor' }) {
         }
         action={
           <Link
-            className={`${btn} inline-flex items-center gap-2`}
+            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-brand px-5 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-brand-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
             href={buyer ? '/tenders/new' : '/vendor/tenders'}
           >
             {buyer ? (

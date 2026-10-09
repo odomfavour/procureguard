@@ -1,4 +1,5 @@
 'use client';
+import { useToast } from '@/components/ui/toast-provider';
 import { DataTable } from '@/components/msflib/data-table';
 import { useState } from 'react';
 import Link from 'next/link';
@@ -20,12 +21,21 @@ import DocumentsPanel from './DocumentsPanel';
 import AiPanel from './AiPanel';
 export default function LivePortal() {
   const auth = useAuth();
+  const notify = useToast();
   const notifications = useNotification();
   const active = useActiveWorkspace();
   const client = useQueryClient();
   const [tab, setTab] = useState('Organization');
-  const [error, setError] = useState('');
-  const [message, setMessage] = useState('');
+  const [error, setErrorState] = useState('');
+  function setError(value: string) {
+    setErrorState(value);
+    if (value) notify(value, 'error');
+  }
+  const [message, setMessageState] = useState('');
+  function setMessage(value: string) {
+    setMessageState(value);
+    if (value) notify(value, 'success');
+  }
   const [busy, setBusy] = useState(false);
   async function execute(action: () => Promise<unknown>) {
     setError('');
