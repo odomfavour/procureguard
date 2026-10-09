@@ -2,6 +2,7 @@
 import { PageState, isNotFoundError } from '@/components/ui/page-state';
 
 import Link from 'next/link';
+import { formatDate } from '@/utils/format-date';
 import { useAuth } from '@msflib/react-auth';
 import { useQuery } from '@tanstack/react-query';
 import { getTender } from '@/lib/api/tenders';
@@ -206,7 +207,7 @@ export function TenderDetail({ role }: { role: TenderRole }) {
 
                 <span className="inline-flex items-center gap-1.5 text-sm text-ink-soft">
                   <CalendarDays className="h-4 w-4" />
-                  Closes {tender.deadline}
+                  Closes {formatDate(tender.deadline)}
                 </span>
 
                 <span className="text-sm text-ink-soft">
@@ -217,7 +218,7 @@ export function TenderDetail({ role }: { role: TenderRole }) {
 
             {!isBuyer && tender.status === 'open' && (
               <Link
-                className={`${btn} inline-flex items-center gap-2`}
+                className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-brand px-5 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-brand-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
                 href={`/vendor/tenders/${id}/apply`}
               >
                 Apply for tender
@@ -389,7 +390,7 @@ export function TenderDetail({ role }: { role: TenderRole }) {
           <div className="grid gap-x-8 gap-y-6 sm:grid-cols-2 lg:grid-cols-3">
             <DetailItem label="Maximum budget" value={money(tender.budget)} />
 
-            <DetailItem label="Submission deadline" value={tender.deadline} />
+            <DetailItem label="Submission deadline" value={formatDate(tender.deadline)} />
 
             <DetailItem
               label="Delivery / service location"

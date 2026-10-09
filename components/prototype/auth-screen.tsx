@@ -15,14 +15,15 @@ import { Panel } from './portal';
 import { useData } from './common';
 import { field, submit } from '@/components/ui/fields';
 
-export function AuthScreen({ mode, initialLive = false, initialRole = 'buyer' }: { mode: 'login' | 'register'; initialLive?: boolean; initialRole?: Role }) {
+export function AuthScreen({ mode, initialRole = 'buyer' }: { mode: 'login' | 'register'; initialRole?: Role }) {
   const router = useRouter();
   const auth = useAuth();
   const notify = useToast();
   const { db, update } = useData();
 
   const [role, setRole] = useState<Role>(initialRole);
-  const [live, setLive] = useState(initialLive);
+  // Demo mode is temporarily disabled. Restore the mode selector below to enable it.
+  const live = true;
 
   const [values, setValues] = useState<Record<string, unknown>>({});
   const [error, setErrorState] = useState('');
@@ -85,7 +86,8 @@ export function AuthScreen({ mode, initialLive = false, initialRole = 'buyer' }:
           title={mode === 'login' ? 'Welcome back' : 'Create your account'}
           subtitle="A safer way to procure, deliver and get paid."
         >
-          {/* Account mode selection */}
+          {/* Account mode selection (temporarily disabled)
+
           <div className="mb-5 grid grid-cols-2 gap-2">
             {[false, true].map((real) => (
               <button
@@ -107,7 +109,8 @@ export function AuthScreen({ mode, initialLive = false, initialRole = 'buyer' }:
             ))}
           </div>
 
-          {/* Demo account selection */}
+          Demo account selection
+
           {!live && mode === 'login' && (
             <div className="mb-4 space-y-4">
               <p className="text-sm text-ink-soft">
@@ -134,6 +137,8 @@ export function AuthScreen({ mode, initialLive = false, initialRole = 'buyer' }:
               ))}
             </div>
           )}
+
+          */}
 
           {/* Buyer / Vendor selection */}
           {mode === 'register' && (

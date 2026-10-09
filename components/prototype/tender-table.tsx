@@ -1,5 +1,6 @@
 'use client';
 import Link from 'next/link';
+import { formatDate } from '@/utils/format-date';
 import { MapPin } from 'lucide-react';
 import { DataTable, type Column } from '@/components/msflib/data-table';
 import { money, type Role } from '@/lib/prototype';
@@ -95,7 +96,7 @@ export function TenderTable({
         <span className="font-semibold tabular-nums">{money(row.budget)}</span>
       ),
     },
-    { field: 'deadline', headerName: 'Deadline', width: 140 },
+    { field: 'deadline', headerName: 'Deadline', width: 140, renderCell: ({ row }) => formatDate(row.deadline) },
     {
       field: 'status',
       headerName: 'Status',
