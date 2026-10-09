@@ -123,7 +123,7 @@ export function AuthScreen({ mode }: { mode: 'login' | 'register' }) {
           )}
 
           {/* Buyer / Vendor selection */}
-          {mode === 'register' && !live && (
+          {mode === 'register' && (
             <div className="mb-4 grid grid-cols-2 gap-2">
               {(['buyer', 'vendor'] as const).map((selectedRole) => (
                 <button
@@ -187,7 +187,9 @@ export function AuthScreen({ mode }: { mode: 'login' | 'register' }) {
                     await auth.register({
                       email,
                       password,
-                      username: fullName,
+                      firstname: requiredText(formValues.firstName, 'First name'),
+                      lastname: requiredText(formValues.lastName, 'Last name'),
+                      role,
                     });
 
                     setMessage(

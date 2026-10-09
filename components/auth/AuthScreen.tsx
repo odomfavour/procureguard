@@ -6,7 +6,7 @@ import { useAuth } from '@msflib/react-auth';
 import FormBuilder from '@/components/msflib/form-builder';
 import OtpInput from '@msflib/react-components/otp-input';
 import { field, submit } from '@/components/ui/fields';
-import { ErrorState } from '@/components/ui/shared';
+import { Panel } from '@/components/prototype/portal';
 import { requiredText } from '@/lib/schemas/procurement';
 type Mode = 'login' | 'register' | 'recover' | 'reset' | 'otp';
 export default function AuthScreen({ initialMode }: { initialMode: Mode }) {
@@ -27,7 +27,9 @@ export default function AuthScreen({ initialMode }: { initialMode: Mode }) {
   };
   const elements = [
     field('email', 'Email', 'email'),
-    ...(mode === 'register' ? [field('username', 'Username')] : []),
+    ...(mode === 'register'
+      ? [field('firstname', 'First name'), field('lastname', 'Last name')]
+      : []),
     ...(['login', 'register', 'reset'].includes(mode)
       ? [
           field(
@@ -56,7 +58,8 @@ export default function AuthScreen({ initialMode }: { initialMode: Mode }) {
       if (mode === 'register') {
         await auth.register({
           email,
-          username: requiredText(values.username, 'Username'),
+          firstname: requiredText(values.firstname, 'First name'),
+          lastname: requiredText(values.lastname, 'Last name'),
           password: requiredText(values.password, 'Password'),
         });
         setMessage(
@@ -92,45 +95,86 @@ export default function AuthScreen({ initialMode }: { initialMode: Mode }) {
     }
   }
   return (
-    <div className="integration rounded-xl border border-line bg-white p-6">
-      <Link href="/" className="brand">
-        ◈ ProcureGuard
-      </Link>
-      <h1>{titles[mode]}</h1>
-      <p>Secure procurement starts with your organization.</p>
-      <ErrorState message={error} />
-      {message && <p role="status">{message}</p>}
-      {mode === 'otp' && (
-        <OtpInput
-          value={code}
-          onChange={setCode}
-          ariaLabel="Verification code"
-          disabled={busy}
-        />
-      )}
-      <FormBuilder
-        key={mode}
-        elements={elements}
-        formData={data}
-        setFormData={setData}
-        loadingState={busy}
-        onSubmit={(values: Record<string, unknown>) => void send(values)}
-      />
-      <div className="actions">
-        <Link href={mode === 'register' ? '/login' : '/register'}>
-          {mode === 'register' ? 'Sign in' : 'Create account'}
+    <div className="flex min-h-screen items-center justify-center bg-paper p-5">
+      <div className="w-full max-w-md">
+        <Link
+          href="/"
+          className="mb-7 block text-center text-2xl font-bold text-brand"
+        >
+          ◈ ProcureGuard
         </Link>
-        <button onClick={() => setMode('recover')}>Forgot password?</button>
-        {process.env.NEXT_PUBLIC_ENABLE_OTP === 'true' && (
-          <button onClick={() => setMode('otp')}>Use OTP</button>
-        )}
+        <Panel
+          title={titles[mode]}
+          subtitle={
+            mode === 'recover'
+              ? 'Enter your email to receive password recovery instructions.'
+              : mode === 'reset'
+                ? 'Enter your recovery token and choose a new password.'
+                : 'A safer way to procure, deliver and get paid.'
+          }
+        >
+          {message && (
+            <p role="status" className="mb-4 text-sm text-risk-low">
+              {message}
+            </p>
+          )}
+          {mode === 'otp' && (
+            <OtpInput
+              value={code}
+              onChange={setCode}
+              ariaLabel="Verification code"
+              disabled={busy}
+            />
+          )}
+          <FormBuilder
+            key={mode}
+            elements={elements}
+            formData={data}
+            setFormData={setData}
+            loadingState={busy}
+            onSubmit={(values: Record<string, unknown>) => void send(values)}
+          />
+          {error && (
+            <p role="alert" className="mt-3 text-sm text-risk-high">
+              {error}
+            </p>
+          )}
+          <p className="mt-5 text-sm text-ink-soft">
+            Remember your password?{' '}
+            <Link href="/login" className="font-semibold text-brand">
+              Back to sign in
+            </Link>
+          </p>
+          {mode === 'reset' && (
+            <button
+              type="button"
+              disabled={busy}
+              className="mt-3 block text-xs text-brand disabled:opacity-40"
+              onClick={() => {
+                setMode('recover');
+                setError('');
+                setMessage('');
+              }}
+            >
+              Request another recovery token
+            </button>
+          )}
+          {process.env.NEXT_PUBLIC_ENABLE_OTP === 'true' && mode !== 'otp' && (
+            <button
+              type="button"
+              disabled={busy}
+              className="mt-3 block text-xs text-brand disabled:opacity-40"
+              onClick={() => {
+                setMode('otp');
+                setError('');
+                setMessage('');
+              }}
+            >
+              Verify your account
+            </button>
+          )}
+        </Panel>
       </div>
-      <p className="hint">
-        Live authentication requires a configured MSFLib backend.
-      </p>
-      <Link className="button secondary" href="/demo">
-        Explore the interactive demo
-      </Link>
     </div>
   );
 }
