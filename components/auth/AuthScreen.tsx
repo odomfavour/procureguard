@@ -18,6 +18,7 @@ export default function AuthScreen({ initialMode }: { initialMode: Mode }) {
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
+  const [accountType, setAccountType] = useState<'buyer' | 'vendor'>('buyer');
   const titles = {
     login: 'Welcome back',
     register: 'Create your account',
@@ -53,19 +54,19 @@ export default function AuthScreen({ initialMode }: { initialMode: Mode }) {
           email,
           password: requiredText(values.password, 'Password'),
         });
-        router.replace('/dashboard');
+        router.replace('/onboarding/buyer?account=live');
       }
       if (mode === 'register') {
         await auth.register({
           email,
-          firstname: requiredText(values.firstname, 'First name'),
-          lastname: requiredText(values.lastname, 'Last name'),
+          account_type: accountType,
+          profile: {
+            first_name: requiredText(values.firstname, 'First name'),
+            last_name: requiredText(values.lastname, 'Last name'),
+          },
           password: requiredText(values.password, 'Password'),
         });
-        setMessage(
-          'Account created. Sign in or verify your account if required by your organization.'
-        );
-        setMode('login');
+        router.replace('/login?account=live');
       }
       if (mode === 'recover') {
         await auth.recoverPassword({ email });
@@ -125,6 +126,21 @@ export default function AuthScreen({ initialMode }: { initialMode: Mode }) {
               ariaLabel="Verification code"
               disabled={busy}
             />
+          )}
+          {mode === 'register' && (
+            <div className="mb-4 grid grid-cols-2 gap-2">
+              {(['buyer', 'vendor'] as const).map((type) => (
+                <button
+                  key={type}
+                  type="button"
+                  aria-pressed={accountType === type}
+                  onClick={() => setAccountType(type)}
+                  className={`rounded-lg border p-3 font-medium capitalize ${accountType === type ? 'border-brand bg-brand-tint' : 'border-line'}`}
+                >
+                  {type}
+                </button>
+              ))}
+            </div>
           )}
           <FormBuilder
             key={mode}

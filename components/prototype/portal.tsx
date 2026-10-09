@@ -2,7 +2,7 @@
 import Link from 'next/link';
 import { useData } from './common';
 import { Loading } from '@/components/ui/shared';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import {
   LogOut,
@@ -13,6 +13,8 @@ import {
   Package,
   FolderOpen,
   Bell,
+  Menu,
+  X,
 } from 'lucide-react';
 import { session, logout } from '@/lib/prototype';
 export function Portal({
@@ -24,6 +26,7 @@ export function Portal({
 }) {
   const router = useRouter();
   const path = usePathname();
+  const [menuOpen, setMenuOpen] = useState(false);
   const { db } = useData();
   const account = db?.accounts.find((a) => a.id === session()) || null;
   useEffect(() => {
@@ -53,17 +56,38 @@ export function Portal({
   return (
     <div className="min-h-screen bg-paper lg:flex">
       <aside className="bg-[#101e42] text-white lg:w-64 shrink-0">
-        <div className="p-6 text-xl font-bold tracking-tight">
-          ◈ ProcureGuard
+        <div className="flex items-center justify-between p-6">
+          <span className="text-xl font-bold tracking-tight">◈ ProcureGuard</span>
+          <button
+            type="button"
+            className="rounded-lg p-2 hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-white lg:hidden"
+            aria-label={menuOpen ? 'Close navigation' : 'Open navigation'}
+            aria-expanded={menuOpen}
+            aria-controls="workspace-navigation"
+            onClick={() => setMenuOpen((open) => !open)}
+          >
+            {menuOpen ? <X size={24} /> : <Menu size={24} />}
+          </button>
         </div>
+        <div
+          id="workspace-navigation"
+          className={`${menuOpen ? 'block' : 'hidden'} lg:block`}
+          onKeyDown={(event) => {
+            if (event.key === 'Escape') {
+              setMenuOpen(false);
+              document.querySelector<HTMLButtonElement>('[aria-controls="workspace-navigation"]')?.focus();
+            }
+          }}
+        >
         <div className="px-6 pb-5 text-xs text-blue-200">
           {role === 'buyer' ? 'BUYER WORKSPACE' : 'VENDOR WORKSPACE'}
         </div>
-        <nav className="flex gap-1 overflow-x-auto px-3 pb-3 lg:flex-col">
+        <nav aria-label="Workspace navigation" className="flex flex-col gap-1 px-3 pb-3">
           {links.map(([href, label, Icon]) => (
             <Link
               key={href}
               href={href}
+              onClick={() => setMenuOpen(false)}
               className={`flex shrink-0 items-center gap-3 rounded-lg px-3 py-3 text-sm ${path === href ? 'bg-white/15 text-white' : 'text-blue-100 hover:bg-white/10'}`}
             >
               <Icon size={17} />
@@ -71,6 +95,7 @@ export function Portal({
             </Link>
           ))}
         </nav>
+        </div>
       </aside>
       <div className="min-w-0 flex-1">
         <header className="flex flex-wrap items-center justify-between gap-3 border-b border-line bg-white px-5 py-4 sm:px-8">

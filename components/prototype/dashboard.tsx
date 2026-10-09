@@ -1,9 +1,27 @@
 'use client';
 import Link from 'next/link';
+import {
+  ArrowRight,
+  ClipboardList,
+  FileText,
+  Inbox,
+  Package,
+  Plus,
+  Search,
+  type LucideIcon,
+} from 'lucide-react';
 import { session } from '@/lib/prototype';
 import { TenderTable } from './tender-table';
 import { Portal, Panel, Heading } from './portal';
 import { useData, btn } from './common';
+
+type Stat = {
+  label: string;
+  count: number;
+  hint: string;
+  icon: LucideIcon;
+};
+
 export function Dashboard({ role }: { role: 'buyer' | 'vendor' }) {
   const { db } = useData();
   const a = db?.accounts.find((x) => x.id === session());
@@ -15,6 +33,35 @@ export function Dashboard({ role }: { role: 'buyer' | 'vendor' }) {
   const apps = buyer
     ? db.applications.filter((x) => tenders.some((t) => t.id === x.tenderId))
     : db.applications.filter((x) => x.vendorId === a.id);
+  const orders = db.orders.filter((o) =>
+    buyer
+      ? db.tenders.some((t) => t.id === o.tenderId && t.buyerId === a.id)
+      : db.applications.some(
+          (x) => x.id === o.applicationId && x.vendorId === a.id
+        )
+  );
+
+  const stats: Stat[] = [
+    {
+      label: buyer ? 'Your tenders' : 'Open tenders',
+      count: tenders.length,
+      hint: buyer ? 'Tenders you have published' : 'Currently accepting bids',
+      icon: FileText,
+    },
+    {
+      label: buyer ? 'Applications received' : 'My applications',
+      count: apps.length,
+      hint: buyer ? 'Vendors awaiting assessment' : 'Bids you have submitted',
+      icon: Inbox,
+    },
+    {
+      label: buyer ? 'Active orders' : 'Awarded orders',
+      count: orders.length,
+      hint: buyer ? 'Orders in progress' : 'Contracts to fulfil',
+      icon: Package,
+    },
+  ];
+
   return (
     <Portal role={role}>
       <Heading
@@ -26,42 +73,74 @@ export function Dashboard({ role }: { role: 'buyer' | 'vendor' }) {
         }
         action={
           <Link
-            className={btn}
+            className={`${btn} inline-flex items-center gap-2`}
             href={buyer ? '/tenders/new' : '/vendor/tenders'}
           >
-            {buyer ? 'Create tender' : 'Browse tenders'} →
+            {buyer ? (
+              <Plus className="h-4 w-4" />
+            ) : (
+              <Search className="h-4 w-4" />
+            )}
+            {buyer ? 'Create tender' : 'Browse tenders'}
+            <ArrowRight className="h-4 w-4" />
           </Link>
         }
       />
+
       <div className="mb-6 grid gap-4 sm:grid-cols-3">
-        {[
-          [buyer ? 'Your tenders' : 'Open tenders', tenders.length],
-          [buyer ? 'Applications received' : 'My applications', apps.length],
-          [
-            buyer ? 'Active orders' : 'Awarded orders',
-            db.orders.filter((o) =>
-              buyer
-                ? db.tenders.some(
-                    (t) => t.id === o.tenderId && t.buyerId === a.id
-                  )
-                : db.applications.some(
-                    (x) => x.id === o.applicationId && x.vendorId === a.id
-                  )
-            ).length,
-          ],
-        ].map(([label, count]) => (
-          <Panel key={label as string}>
-            <p className="text-sm text-ink-soft">{label}</p>
-            <p className="mt-2 text-3xl font-bold">{count}</p>
+        {stats.map(({ label, count, hint, icon: Icon }) => (
+          <Panel key={label}>
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <p className="text-sm font-medium text-ink-soft">{label}</p>
+                <p className="mt-2 text-3xl font-bold tracking-tight">
+                  {count}
+                </p>
+              </div>
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand/10 text-brand">
+                <Icon className="h-5 w-5" />
+              </span>
+            </div>
+            <p className="mt-3 border-t border-line pt-3 text-xs text-ink-soft">
+              {hint}
+            </p>
           </Panel>
         ))}
       </div>
+
       <Panel title={buyer ? 'Recent tenders' : 'Available opportunities'}>
-        <TenderTable
-          tenders={tenders}
-          role={role}
-          title={buyer ? 'Recent tenders' : 'Available opportunities'}
-        />
+        {tenders.length ? (
+          <TenderTable
+            tenders={tenders}
+            role={role}
+            title={buyer ? 'Recent tenders' : 'Available opportunities'}
+          />
+        ) : (
+          <div className="flex flex-col items-center gap-3 py-12 text-center">
+            <span className="flex h-12 w-12 items-center justify-center rounded-full bg-brand/10 text-brand">
+              <ClipboardList className="h-6 w-6" />
+            </span>
+            <div>
+              <p className="font-semibold">
+                {buyer ? 'No tenders yet' : 'No open tenders right now'}
+              </p>
+              <p className="mt-1 text-sm text-ink-soft">
+                {buyer
+                  ? 'Create your first tender to start receiving applications.'
+                  : 'Check back soon for new opportunities.'}
+              </p>
+            </div>
+            {buyer && (
+              <Link
+                className={`${btn} inline-flex items-center gap-2`}
+                href="/tenders/new"
+              >
+                <Plus className="h-4 w-4" />
+                Create tender
+              </Link>
+            )}
+          </div>
+        )}
       </Panel>
     </Portal>
   );

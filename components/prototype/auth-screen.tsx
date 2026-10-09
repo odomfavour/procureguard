@@ -12,13 +12,13 @@ import { Panel } from './portal';
 import { useData } from './common';
 import { field, submit } from '@/components/ui/fields';
 
-export function AuthScreen({ mode }: { mode: 'login' | 'register' }) {
+export function AuthScreen({ mode, initialLive = false }: { mode: 'login' | 'register'; initialLive?: boolean }) {
   const router = useRouter();
   const auth = useAuth();
   const { db, update } = useData();
 
   const [role, setRole] = useState<Role>('buyer');
-  const [live, setLive] = useState(false);
+  const [live, setLive] = useState(initialLive);
 
   const [values, setValues] = useState<Record<string, unknown>>({});
   const [error, setError] = useState('');
@@ -182,19 +182,19 @@ export function AuthScreen({ mode }: { mode: 'login' | 'register' }) {
                       password,
                     });
 
-                    router.push('/workspace');
+                    router.push('/onboarding/buyer?account=live');
                   } else {
                     await auth.register({
                       email,
                       password,
-                      firstname: requiredText(formValues.firstName, 'First name'),
-                      lastname: requiredText(formValues.lastName, 'Last name'),
-                      role,
+                      account_type: role,
+                      profile: {
+                        first_name: requiredText(formValues.firstName, 'First name'),
+                        last_name: requiredText(formValues.lastName, 'Last name'),
+                      },
                     });
 
-                    setMessage(
-                      'Account created successfully. Sign in with your live account to complete your profile and organization setup.'
-                    );
+                    router.replace('/login?account=live');
                   }
 
                   return;

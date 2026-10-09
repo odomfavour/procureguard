@@ -6,7 +6,7 @@ import { resolveWorkspace } from '@/utils/resolveWorkspace';
 export function initMsflib() {
   const scope = resolveWorkspace();
   configureApplication({
-    baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/v1',
+    baseURL: (process.env.NEXT_PUBLIC_API_URL || 'https://procure-api-mqlx.onrender.com/api/v1').replace(/\/$/, ''),
     accessTokenKey:
       process.env.NEXT_PUBLIC_ACCESS_TOKEN_KEY || 'procureguard_access_token',
     apiClientDecorator: scope.enabled
@@ -15,6 +15,16 @@ export function initMsflib() {
     workspace: scope.enabled
       ? process.env.NEXT_PUBLIC_DEFAULT_TENANT?.trim() || null
       : null,
-    endpoints: {},
+    endpoints: {
+      auth: {
+        register: '/account/signup',
+        login: '/auth/login',
+        me: '/account/me',
+        recoverPassword: '/auth/password-recovery',
+        verifyToken: '/auth/verify-token',
+        resetPassword: '/auth/reset-password',
+        logout: '/auth/logout',
+      },
+    },
   });
 }
