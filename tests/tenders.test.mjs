@@ -77,3 +77,14 @@ test('wrapped tender details response unwraps the tender rather than parsing the
   assert.equal(tender.documents[0], 'Quotation');
   assert.equal(tender.items[0].quantity, 100);
 });
+
+
+test('TableWidget receives all tender pages rather than only the first API page', async () => {
+  const { api, calls } = setup((method, path, body, options) => ({
+    items: Array.from({ length: options.query.offset === 0 ? 100 : 3 }, (_, index) => ({ id: options.query.offset + index + 1, title: 'Tender', maximum_budget: 100 })), total: 103,
+  }));
+  const result = await api.listAllTenders({ role: 'vendor' });
+  assert.equal(result.tenders.length, 103);
+  assert.equal(calls.length, 2);
+  assert.equal(calls[1][3].query.offset, 100);
+});

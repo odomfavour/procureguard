@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useState } from 'react';
 import { useAuth } from '@msflib/react-auth';
 import { useQuery } from '@tanstack/react-query';
-import { getApplication, listApplications } from '@/lib/api/applications';
+import { getApplication, listAllApplications } from '@/lib/api/applications';
 import { DataTable } from '@/components/msflib/data-table';
 import { Loading } from '@/components/ui/shared';
 import { money } from '@/lib/prototype';
@@ -13,20 +13,19 @@ import { btn } from './common';
 
 export function LiveApplications() {
   const auth = useAuth();
-  const [offset, setOffset] = useState(0);
   const [status, setStatus] = useState('');
   const [tenderId, setTenderId] = useState('');
   const query = useQuery({
-    queryKey: ['procureguard', 'applications', auth.me?.id, offset, status, tenderId],
-    queryFn: () => listApplications({ offset, limit: 20, status: status || undefined, tenderId: tenderId || undefined }),
+    queryKey: ['procureguard', 'applications', auth.me?.id, status, tenderId],
+    queryFn: () => listAllApplications({ status: status || undefined, tenderId: tenderId || undefined }),
   });
   const rows = query.data?.applications || [];
   return <Portal role="vendor">
     <Heading title="My applications" subtitle="Track submitted bids and procurement decisions." />
     <Panel>
       <div className="mb-4 flex flex-wrap gap-4">
-        <label className="text-sm font-medium">Status<input className="ml-2 rounded-lg border border-line px-3 py-2" placeholder="All statuses" value={status} onChange={(event) => { setStatus(event.target.value); setOffset(0); }} /></label>
-        <label className="text-sm font-medium">Tender ID<input className="ml-2 rounded-lg border border-line px-3 py-2" type="number" min="1" placeholder="All tenders" value={tenderId} onChange={(event) => { setTenderId(event.target.value); setOffset(0); }} /></label>
+        <label className="text-sm font-medium">Status<input className="ml-2 rounded-lg border border-line px-3 py-2" placeholder="All statuses" value={status} onChange={(event) => { setStatus(event.target.value); }} /></label>
+        <label className="text-sm font-medium">Tender ID<input className="ml-2 rounded-lg border border-line px-3 py-2" type="number" min="1" placeholder="All tenders" value={tenderId} onChange={(event) => { setTenderId(event.target.value); }} /></label>
       </div>
       {query.isPending ? <Loading /> : query.isError ? <PageState title="Couldn’t load your applications" onRetry={() => void query.refetch()} backHref="/vendor/dashboard" backLabel="Back to dashboard" /> : <>
         <DataTable rows={rows} title="My applications" columns={[
@@ -37,13 +36,6 @@ export function LiveApplications() {
           { field: 'tenderId', headerName: 'Tender details', width: 160, renderCell: ({ row }) => <Link className="text-brand hover:underline" href={`/vendor/tenders/${row.tenderId}`}>View tender</Link> },
         ]} />
         {!rows.length && <p className="py-6 text-center text-ink-soft">No applications found.</p>}
-        <div className="mt-4 flex items-center justify-between gap-3 border-t border-line pt-4 text-sm">
-          <span>{rows.length ? `${offset + 1}–${offset + rows.length}` : '0'}{query.data.total !== undefined ? ` of ${query.data.total}` : ''}</span>
-          <div className="flex gap-2">
-            <button className={btn} disabled={offset === 0 || query.isFetching} onClick={() => setOffset((value) => Math.max(0, value - 20))}>Previous</button>
-            <button className={btn} disabled={query.isFetching || (query.data.total !== undefined ? offset + rows.length >= query.data.total : rows.length < 20)} onClick={() => setOffset((value) => value + 20)}>Next</button>
-          </div>
-        </div>
       </>}
     </Panel>
   </Portal>;

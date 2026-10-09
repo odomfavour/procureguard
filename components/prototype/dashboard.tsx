@@ -37,13 +37,28 @@ export function Dashboard({ role }: { role: 'buyer' | 'vendor' }) {
     enabled: isLive,
   });
   const { db: localDb } = useData();
-  const db = isLive && localDb ? { ...localDb, tenders: [], applications: [], orders: [] } : localDb;
-  const a = isLive ? { id: String(auth.me?.id), name: auth.me?.username || auth.me?.email || '' } : db?.accounts.find((x) => x.id === session());
-  if (!db || !a) return <Portal role={role}><PageLoader fullPage={false} /></Portal>;
+  const db =
+    isLive && localDb
+      ? { ...localDb, tenders: [], applications: [], orders: [] }
+      : localDb;
+  const a = isLive
+    ? {
+        id: String(auth.me?.id),
+        name: auth.me?.username || auth.me?.email || '',
+      }
+    : db?.accounts.find((x) => x.id === session());
+  if (!db || !a)
+    return (
+      <Portal role={role}>
+        <PageLoader fullPage={false} />
+      </Portal>
+    );
   const buyer = role === 'buyer';
-  const tenders = isLive ? query.data?.tenders || [] : buyer
-    ? db.tenders.filter((t) => t.buyerId === a.id)
-    : db.tenders.filter((t) => t.status === 'open');
+  const tenders = isLive
+    ? query.data?.tenders || []
+    : buyer
+      ? db.tenders.filter((t) => t.buyerId === a.id)
+      : db.tenders.filter((t) => t.status === 'open');
   const apps = buyer
     ? db.applications.filter((x) => tenders.some((t) => t.id === x.tenderId))
     : db.applications.filter((x) => x.vendorId === a.id);
@@ -58,8 +73,13 @@ export function Dashboard({ role }: { role: 'buyer' | 'vendor' }) {
   const stats: Stat[] = [
     {
       label: buyer ? 'Your tenders' : 'Open tenders',
-      count: isLive ? query.data?.total ?? tenders.length : tenders.length,
-      hint: isLive && query.data?.total === undefined ? 'Tenders on the first page' : buyer ? 'Tenders you have published' : 'Currently accepting bids',
+      count: isLive ? (query.data?.total ?? tenders.length) : tenders.length,
+      hint:
+        isLive && query.data?.total === undefined
+          ? 'Tenders on the first page'
+          : buyer
+            ? 'Tenders you have published'
+            : 'Currently accepting bids',
       icon: FileText,
     },
     {
@@ -108,7 +128,11 @@ export function Dashboard({ role }: { role: 'buyer' | 'vendor' }) {
               <div className="min-w-0">
                 <p className="text-sm font-medium text-ink-soft">{label}</p>
                 <p className="mt-2 text-3xl font-bold tracking-tight">
-                  {isLive && label === (buyer ? 'Your tenders' : 'Open tenders') && (query.isPending || query.isError) ? '—' : count}
+                  {isLive &&
+                  label === (buyer ? 'Your tenders' : 'Open tenders') &&
+                  (query.isPending || query.isError)
+                    ? '—'
+                    : count}
                 </p>
               </div>
               <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand/10 text-brand">
@@ -123,14 +147,17 @@ export function Dashboard({ role }: { role: 'buyer' | 'vendor' }) {
       </div>
 
       <Panel title={buyer ? 'Recent tenders' : 'Available opportunities'}>
-        {isLive && query.isPending ? <Loading /> : isLive && query.isError ? (
-          <PageState title="Couldn’t load tenders" onRetry={() => void query.refetch()} backHref={role === "buyer" ? "/dashboard" : "/vendor/dashboard"} backLabel="Back to dashboard" />
-        ) : tenders.length ? (
-          <TenderTable
-            tenders={tenders}
-            role={role}
-            title={buyer ? 'Recent tenders' : 'Available opportunities'}
+        {isLive && query.isPending ? (
+          <Loading />
+        ) : isLive && query.isError ? (
+          <PageState
+            title="Couldn’t load tenders"
+            onRetry={() => void query.refetch()}
+            backHref={role === 'buyer' ? '/dashboard' : '/vendor/dashboard'}
+            backLabel="Back to dashboard"
           />
+        ) : tenders.length ? (
+          <TenderTable tenders={tenders} role={role} title={''} />
         ) : (
           <div className="flex flex-col items-center gap-3 py-12 text-center">
             <span className="flex h-12 w-12 items-center justify-center rounded-full bg-brand/10 text-brand">
@@ -157,7 +184,14 @@ export function Dashboard({ role }: { role: 'buyer' | 'vendor' }) {
             )}
           </div>
         )}
-        {isLive && !!tenders.length && <Link className="mt-4 inline-block font-semibold text-brand hover:underline" href={buyer ? '/tenders' : '/vendor/tenders'}>View all tenders →</Link>}
+        {isLive && !!tenders.length && (
+          <Link
+            className="mt-4 inline-block font-semibold text-brand hover:underline"
+            href={buyer ? '/tenders' : '/vendor/tenders'}
+          >
+            View all tenders →
+          </Link>
+        )}
       </Panel>
     </Portal>
   );

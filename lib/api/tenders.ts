@@ -97,3 +97,14 @@ export async function createTender(payload: CreateTenderPayload) {
   const { apiClient } = configuredApiClient({ isWorkspaceScoped: false });
   return apiClient<unknown>('POST', '/tenders', payload);
 }
+
+
+export async function listAllTenders(options: { role: 'buyer' | 'vendor'; status?: 'active' | 'closed' }) {
+  const tenders: TenderSummary[] = [];
+  for (let offset = 0; ; offset += 100) {
+    const page = await listTenders({ ...options, offset, limit: 100 });
+    tenders.push(...page.tenders);
+    if (page.tenders.length < 100 || (page.total !== undefined && tenders.length >= page.total)) break;
+  }
+  return { tenders, total: tenders.length };
+}

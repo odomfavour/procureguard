@@ -25,6 +25,8 @@ export function DataTable<Row extends { id: string }>({
         columns={columns}
         tableTitle={title}
         enableSearch
+        pageSize={20}
+        pageSizeOptions={[10, 20, 50, 100]}
         autoHeight
         styles={{
           root: { border: 0, fontSize: 14, color: '#111b33' },

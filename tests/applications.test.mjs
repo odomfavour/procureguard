@@ -51,3 +51,13 @@ test('application list forwards tender and status filters with pagination', asyn
   assert.equal(result.total, 1);
   await assert.rejects(api.getApplication('invalid-id'), /Invalid record ID/);
 });
+
+
+test('TableWidget receives every application page with filters preserved', async () => {
+  const { api, calls } = setup((method, path, body, options) => ({
+    items: Array.from({ length: options.query.offset === 0 ? 100 : 1 }, (_, index) => ({ id: options.query.offset + index + 1, tender_id: 42 })), total: 101,
+  }));
+  assert.equal((await api.listAllApplications({ status: 'submitted' })).applications.length, 101);
+  assert.equal(calls[1][3].query.offset, 100);
+  assert.equal(calls[1][3].query.status, 'submitted');
+});

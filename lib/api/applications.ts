@@ -59,3 +59,14 @@ export async function getApplication(id: string) {
   const { apiClient } = configuredApiClient({ isWorkspaceScoped: false });
   return parseApplication(await apiClient<unknown>('GET', `/applications/${apiId(id)}`));
 }
+
+
+export async function listAllApplications(options: { tenderId?: string; status?: string } = {}) {
+  const applications: ApplicationRecord[] = [];
+  for (let offset = 0; ; offset += 100) {
+    const page = await listApplications({ ...options, offset, limit: 100 });
+    applications.push(...page.applications);
+    if (page.applications.length < 100 || (page.total !== undefined && applications.length >= page.total)) break;
+  }
+  return { applications, total: applications.length };
+}
