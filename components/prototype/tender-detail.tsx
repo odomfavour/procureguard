@@ -2,6 +2,7 @@
 import { PageState, isNotFoundError } from '@/components/ui/page-state';
 
 import Link from 'next/link';
+import { TenderApplications } from './tender-applications';
 import { formatDate } from '@/utils/format-date';
 import { useAuth } from '@msflib/react-auth';
 import { useQuery } from '@tanstack/react-query';
@@ -257,6 +258,7 @@ export function TenderDetail({ role }: { role: TenderRole }) {
           )}
 
         {/* Applications */}
+        {isBuyer && live && <TenderApplications id={id} />}
         {isBuyer && !live && (
           <SectionCard
             title={`Vendor comparison (${applications.length})`}

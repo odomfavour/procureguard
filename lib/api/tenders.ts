@@ -21,7 +21,7 @@ export async function getTender(id: string): Promise<Tender> {
     status: (summary.status === 'active' ? 'open' : summary.status) as Tender['status'],
     buyerId: String(row.buyer_id ?? ''),
     description: String(row.optional_description ?? row.description ?? ''),
-    items: objects(row.items).map((entry) => ({ name: String(entry.item ?? entry.name ?? ''), quantity: Number(entry.quantity), unit: String(entry.unit ?? '') })),
+    items: objects(row.items).map((entry) => ({ id: entry.id == null ? undefined : String(entry.id), name: String(entry.item ?? entry.name ?? ''), quantity: Number(entry.quantity), unit: String(entry.unit ?? '') })),
     requirements: objects(row.product_requirements ?? row.requirements).map((entry, index) => ({ id: String(entry.id ?? index), label: String(entry.requirement_name ?? entry.label ?? ''), value: String(entry.value ?? '') })),
     documents: Array.isArray(row.required_documents ?? row.documents) ? ((row.required_documents ?? row.documents) as unknown[]).map((entry) => typeof entry === 'string' ? entry : String(record(entry)?.name ?? '')).filter(Boolean) : [],
   };

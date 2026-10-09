@@ -1,5 +1,6 @@
 'use client';
 import Link from 'next/link';
+import { NotificationBell } from '@/components/ui/notification-bell';
 import { useAuth } from '@msflib/react-auth';
 import { useToast } from '@/components/ui/toast-provider';
 import { useData } from './common';
@@ -14,7 +15,6 @@ import {
   Wallet,
   Package,
   FolderOpen,
-  Bell,
   Menu,
   X,
 } from 'lucide-react';
@@ -113,14 +113,7 @@ export function Portal({
             </div>
           </div>
           <div className="flex items-center gap-4">
-            <Link
-              href={
-                role === 'buyer' ? '/notifications' : '/vendor/notifications'
-              }
-              aria-label="Notifications"
-            >
-              <Bell size={19} />
-            </Link>
+            <NotificationBell role={role} />
             <button
               className="flex items-center gap-2 text-sm text-ink-soft"
               onClick={async () => {

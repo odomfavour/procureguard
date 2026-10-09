@@ -20,7 +20,7 @@ export type Tender = {
   budget: number;
   deadline: string;
   location: string;
-  items: { name: string; quantity: number; unit: string }[];
+  items: { id?: string; name: string; quantity: number; unit: string }[];
   requirements: Requirement[];
   documents: string[];
   status: 'open' | 'awarded' | 'completed';

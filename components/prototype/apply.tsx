@@ -12,7 +12,7 @@ import { field } from '@/components/ui/fields';
 import { positiveAmount, futureDate } from '@/lib/schemas/procurement';
 import { useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import { uid, session, notify } from '@/lib/prototype';
+import { uid, session, notify, money } from '@/lib/prototype';
 import { Portal, Panel, Action, Field, Heading } from './portal';
 import { useData, btn, select } from './common';
 export function Apply() {
@@ -31,6 +31,10 @@ export function Apply() {
   const t = live ? query.data : db?.tenders.find((x) => x.id === id);
   const account = live ? { id: String(auth.me?.id), organization: '', documents: {} as Record<string, string> } : db?.accounts.find((x) => x.id === session());
   const [error, setError] = useState('');
+  const [unitPrices, setUnitPrices] = useState<Record<string, string>>({});
+  const [timeline, setTimeline] = useState('');
+  const [proposal, setProposal] = useState('');
+  const [notes, setNotes] = useState('');
   const [price, setPrice] = useState('');
   const [days, setDays] = useState('');
   const [files, setFiles] = useState<Record<string, string>>({});
@@ -41,6 +45,8 @@ export function Apply() {
   const existing = live ? !!applications.data?.applications.length : db?.applications.some(
     (a) => a.tenderId === id && a.vendorId === account.id
   );
+  const quotedTotal = t.items.reduce((sum, item) => sum + item.quantity * (Number(unitPrices[item.id || '']) || 0), 0);
+  const invalidQuotes = !t.items.length || t.items.some((item) => !item.id || !Number.isFinite(Number(unitPrices[item.id])) || Number(unitPrices[item.id]) <= 0);
   return (
     <Portal role="vendor">
       <Heading
@@ -48,7 +54,24 @@ export function Apply() {
         subtitle="Complete the proposal and attach all required documents."
       />
       <Panel title="Financial proposal">
-        <FormBuilder
+        {live ? <>
+          <div className="mb-5 space-y-4">
+            {t.items.map((item, index) => <div key={item.id || index} className="rounded-lg border border-line p-4">
+              <p className="font-semibold">{item.name}</p>
+              <p className="mb-3 text-sm text-ink-soft">{item.quantity} {item.unit}</p>
+              <Field label="Unit price (NGN)" type="number" value={unitPrices[item.id || ''] || ''} onChange={(value) => setUnitPrices((previous) => ({ ...previous, [item.id || '']: value }))} />
+              <p className="mt-2 text-sm text-ink-soft">Line total: {money(item.quantity * (Number(unitPrices[item.id || '']) || 0))}</p>
+            </div>)}
+            <p className="font-semibold">Total quotation: {money(quotedTotal)} · Maximum budget: {money(t.budget)}</p>
+            {quotedTotal > t.budget && <p role="alert" className="text-sm text-risk-high">Your quotation exceeds the maximum budget.</p>}
+          </div>
+          <FormBuilder elements={[field('timeline', 'Delivery timeline (e.g. 14 days)'), field('proposal', 'Proposal', 'textarea'), field('notes', 'Additional notes (optional)', 'textarea', false)]}
+            formData={{ timeline, proposal, notes }}
+            setFormData={(change: React.SetStateAction<Record<string, unknown>>) => {
+              const next = typeof change === 'function' ? change({ timeline, proposal, notes }) : change;
+              setTimeline(String(next.timeline ?? '')); setProposal(String(next.proposal ?? '')); setNotes(String(next.notes ?? ''));
+            }} onSubmit={() => {}} />
+        </> : <FormBuilder
           elements={[
             field('price', 'Total proposed price (NGN)', 'number'),
             field('days', 'Delivery / completion days', 'number'),
@@ -63,7 +86,7 @@ export function Apply() {
             setDays(String(next.days || ''));
           }}
           onSubmit={() => {}}
-        />
+        />}
       </Panel>
       <div className="h-5" />
       <Panel title="Tender requirements">
@@ -92,8 +115,13 @@ export function Apply() {
           {t.documents.map((d) => (
             <div key={d} className="rounded-lg border border-line p-3">
               <p className="mb-2 text-sm font-semibold">{d} *</p>
-              {live ? <input type="file" accept=".pdf,.png,.jpg,.jpeg,.doc,.docx" aria-label={`Upload ${d}`} className={select} onChange={(event) => {
+              {live ? <input type="file" accept="application/pdf,image/png,image/jpeg" aria-label={`Upload ${d}`} className={select} onChange={(event) => {
                 const file = event.target.files?.[0];
+                if (file && !['application/pdf', 'image/png', 'image/jpeg'].includes(file.type)) {
+                  toast('Upload a PDF, PNG, or JPEG file.', 'error');
+                  event.target.value = '';
+                  return;
+                }
                 setFiles((previous) => ({ ...previous, [d]: file?.name || '' }));
                 setUploads((previous) => { const next = { ...previous }; if (file) next[d] = file; else delete next[d]; return next; });
               }} /> : <div className="grid gap-2 sm:grid-cols-2">
@@ -138,21 +166,26 @@ export function Apply() {
             disabled={
               submitting || existing ||
               t.status !== 'open' ||
-              Number(price) <= 0 ||
-              Number(days) <= 0 ||
+              (live ? invalidQuotes || quotedTotal > t.budget || !timeline.trim() || !proposal.trim() : Number(price) <= 0 || Number(days) <= 0) ||
               t.documents.some((d) => !files[d]) ||
               t.requirements.some((r) => !responses[r.id])
             }
             onClick={async () => {
               if (submitting) return;
               try {
-                positiveAmount(price);
-                positiveAmount(days);
+                if (!live) { positiveAmount(price); positiveAmount(days); }
                 futureDate(t.deadline);
                 setError('');
                 if (live) {
                   setSubmitting(true);
-                  await applyToTender(id, { price: Number(price), delivery_days: Number(days), responses }, uploads);
+                  if (invalidQuotes || quotedTotal > t.budget || !timeline.trim() || !proposal.trim()) throw new Error('Complete every item quote, delivery timeline, and proposal within the tender budget.');
+                  await applyToTender(id, {
+                    item_quotes: t.items.map((item) => ({ tender_item_id: Number(item.id), unit_price: positiveAmount(unitPrices[item.id!]) })),
+                    requirement_responses: t.requirements.map((requirement) => ({ requirement_id: Number(requirement.id), response: responses[requirement.id]?.trim() || '' })),
+                    delivery_timeline: timeline.trim(),
+                    proposal: proposal.trim(),
+                    additional_notes: notes.trim(),
+                  }, uploads);
                   await client.invalidateQueries({ queryKey: ['procureguard', 'applications'] });
                   toast('Application submitted successfully.');
                   router.push('/vendor/applications');

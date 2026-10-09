@@ -1,10 +1,13 @@
 'use client';
+import { useAuth } from '@msflib/react-auth';
+import { LiveOrders } from './live-orders';
 import { DataTable } from '@/components/msflib/data-table';
 import { useState } from 'react';
 import { session, notify, money } from '@/lib/prototype';
 import { Portal, Panel, Action, Field, Heading } from './portal';
 import { useData, btn } from './common';
 export function Orders({ role }: { role: 'buyer' | 'vendor' }) {
+  const auth = useAuth();
   const { db, update } = useData();
   const a = session();
   const [selected, setSelected] = useState<string | null>(null);
@@ -16,6 +19,7 @@ export function Orders({ role }: { role: 'buyer' | 'vendor' }) {
       const app = db.applications.find((x) => x.id === o.applicationId);
       return role === 'buyer' ? t?.buyerId === a : app?.vendorId === a;
     }) || [];
+  if (auth.status === 'authenticated') return <LiveOrders role={role} />;
   return (
     <Portal role={role}>
       <Heading

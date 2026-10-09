@@ -1,13 +1,17 @@
 'use client';
+import { useAuth } from '@msflib/react-auth';
+import { LiveNotifications } from './live-notifications';
 import { session } from '@/lib/prototype';
 import { DataTable } from '@/components/msflib/data-table';
 import { Portal, Panel, Heading } from './portal';
 import { useData } from './common';
 export function Notifications({ role }: { role: 'buyer' | 'vendor' }) {
+  const auth = useAuth();
   const { db, update } = useData();
   const rows = (
     db?.notifications.filter((n) => n.accountId === session()) || []
   ).map((n) => ({ ...n, status: n.read ? 'Read' : 'Unread' }));
+  if (auth.status === 'authenticated') return <LiveNotifications role={role} />;
   return (
     <Portal role={role}>
       <Heading
