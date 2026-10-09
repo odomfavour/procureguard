@@ -1,0 +1,141 @@
+@import 'tailwindcss';
+
+@theme {
+  --color-paper: #f1f3f6;
+  --color-surface: #ffffff;
+  --color-ink: #111b33;
+  --color-ink-soft: #55607a;
+  --color-line: #dce1e9;
+  --color-brand: #2b4cc4;
+  --color-brand-deep: #1a2f85;
+  --color-brand-tint: #e6ebfb;
+  --color-risk-low: #17835a;
+  --color-risk-low-bg: #e3f3ec;
+  --color-risk-medium: #a96f0f;
+  --color-risk-medium-bg: #fbf0da;
+  --color-risk-high: #c0392b;
+  --color-risk-high-bg: #fae5e2;
+}
+
+@theme inline {
+  --font-sans: var(--font-body), ui-sans-serif, system-ui, sans-serif;
+  --font-display:
+    var(--font-heading), var(--font-body), ui-sans-serif, system-ui, sans-serif;
+}
+
+@layer base {
+  html {
+    background: var(--color-paper);
+    color: var(--color-ink);
+  }
+  body {
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+  :focus-visible {
+    outline: 2px solid var(--color-brand);
+    outline-offset: 2px;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
+
+@keyframes seal-draw {
+  from {
+    stroke-dashoffset: var(--seal-circumference);
+  }
+}
+
+.seal-arc {
+  animation: seal-draw 900ms ease-out;
+}
+
+/* Live MSFLib modules use the same tokens as the migrated demo screens. */
+.integration .brand {
+  font-weight: 700;
+  color: var(--color-brand);
+  font-size: 1.25rem;
+}
+.integration .topbar,
+.integration .actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin: 1rem 0;
+}
+.integration .notice {
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+  background: var(--color-brand-tint);
+  color: var(--color-brand);
+  font-size: 0.8rem;
+  margin-bottom: 1.5rem;
+}
+.integration .tabs {
+  display: flex;
+  overflow-x: auto;
+  gap: 0.5rem;
+  margin: 1.5rem 0;
+}
+.integration button,
+.integration .button {
+  cursor: pointer;
+  border: 1px solid var(--color-line);
+  border-radius: 0.5rem;
+  padding: 0.5rem 0.8rem;
+  font-size: 0.875rem;
+}
+.integration .tabs button[aria-current='page'],
+.integration .button {
+  background: var(--color-brand);
+  color: white;
+}
+.integration input:not([type='checkbox']):not([type='file']),
+.integration select {
+  border: 1px solid var(--color-line);
+  border-radius: 0.5rem;
+  padding: 0.6rem;
+  margin: 0.5rem;
+  max-width: 100%;
+}
+.integration .upload-card {
+  display: grid;
+  gap: 0.8rem;
+  padding: 1.5rem;
+  border: 1px dashed var(--color-line);
+  border-radius: 0.5rem;
+  margin: 1rem 0;
+}
+.integration .analysis-pane {
+  height: 560px;
+  margin-top: 1rem;
+  border: 1px solid var(--color-line);
+}
+.integration .pane-content {
+  height: 100%;
+  overflow: auto;
+  padding: 1rem;
+}
+.integration .notification {
+  border-bottom: 1px solid var(--color-line);
+  padding: 1rem 0;
+}
+.integration .hint {
+  margin: 0.75rem 0;
+  color: var(--color-ink-soft);
+  font-size: 0.75rem;
+}
+button:not(:disabled),
+select {
+  cursor: pointer;
+}
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

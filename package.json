@@ -1,0 +1,55 @@
+{
+  "name": "procureguard",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --turbopack",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "test": "node --test tests/*.test.mjs"
+  },
+  "dependencies": {
+    "@emotion/react": "latest",
+    "@emotion/styled": "latest",
+    "@msflib/core": "latest",
+    "@msflib/react-ai": "^0.0.5",
+    "@msflib/react-auth": "^0.0.22",
+    "@msflib/react-components": "latest",
+    "@msflib/react-documents": "^0.0.4",
+    "@msflib/react-notification": "^0.0.13",
+    "@msflib/react-profile": "^0.0.16",
+    "@msflib/react-shared": "latest",
+    "@msflib/react-workspace": "latest",
+    "@mui/material": "latest",
+    "@mui/material-nextjs": "latest",
+    "@tanstack/react-query": "latest",
+    "clsx": "^2.1.1",
+    "lucide-react": "^0.462.0",
+    "next": "latest",
+    "react": "latest",
+    "react-dom": "latest",
+    "tailwind-merge": "^2.6.1"
+  },
+  "devDependencies": {
+    "@eslint/eslintrc": "^3.3.0",
+    "@tailwindcss/postcss": "latest",
+    "@types/node": "latest",
+    "@types/react": "latest",
+    "@types/react-dom": "latest",
+    "eslint": "^9.0.0",
+    "eslint-config-next": "^16.0.0",
+    "eslint-config-prettier": "^10.1.0",
+    "eslint-plugin-prettier": "^5.5.0",
+    "prettier": "latest",
+    "tailwindcss": "latest",
+    "typescript": "~5.9.3"
+  },
+  "optionalDependencies": {
+    "@tailwindcss/oxide-darwin-arm64": "4.3.3"
+  },
+  "engines": {
+    "node": ">=20.9.0"
+  }
+}
