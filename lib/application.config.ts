@@ -3,10 +3,10 @@ import { configureApplication } from '@msflib/core';
 import { workspaceHookDecorator } from '@msflib/react-workspace';
 import { resolveWorkspace } from '@/utils/resolveWorkspace';
 
-export function initMsflib() {
+export function initMsflib(apiURL: string) {
   const scope = resolveWorkspace();
   configureApplication({
-    baseURL: (process.env.NEXT_PUBLIC_API_URL || 'https://procure-api-mqlx.onrender.com/api/v1').replace(/\/$/, ''),
+    baseURL: apiURL.replace(/\/$/, ''),
     accessTokenKey:
       process.env.NEXT_PUBLIC_ACCESS_TOKEN_KEY || 'procureguard_access_token',
     apiClientDecorator: scope.enabled

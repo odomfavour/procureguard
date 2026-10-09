@@ -19,8 +19,6 @@ export const APP_NAME = 'ProcureGuard';
 
 /** Flip to `false` (see .env.example) to call the FastAPI backend. */
 export const USE_MOCKS = process.env.NEXT_PUBLIC_USE_MOCKS !== 'false';
-export const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000/api';
 
 export interface NavItem {
   label: string;

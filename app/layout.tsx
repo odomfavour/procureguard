@@ -29,7 +29,7 @@ export default function RootLayout({
     <html lang="en" className={`${body.variable} ${heading.variable}`}>
       <body>
         <AppRouterCacheProvider>
-          <Providers>{children}</Providers>
+          <Providers apiURL={process.env.API_URL || 'https://procure-api-mqlx.onrender.com/api/v1'}>{children}</Providers>
         </AppRouterCacheProvider>
       </body>
     </html>

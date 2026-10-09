@@ -11,7 +11,6 @@ import { ThemeProvider } from '@/theme/Themeprovider';
 import { useActiveWorkspace } from '@msflib/react-shared';
 import { initMsflib } from '@/lib/application.config';
 
-initMsflib();
 function Modules({ children }: { children: React.ReactNode }) {
   const { status } = useAuth();
   const workspace = useActiveWorkspace();
@@ -42,7 +41,8 @@ function Modules({ children }: { children: React.ReactNode }) {
     </WorkspaceProvider>
   );
 }
-export default function Providers({ children }: { children: React.ReactNode }) {
+export default function Providers({ children, apiURL }: { children: React.ReactNode; apiURL: string }) {
+  initMsflib(apiURL);
   const [client] = useState(
     () =>
       new QueryClient({

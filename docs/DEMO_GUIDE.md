@@ -15,7 +15,7 @@ Use Node 20.9+ (Node 22 was used for verification), then `pnpm dev`.
 
 ## Live MSFLib demonstration
 
-Configure `NEXT_PUBLIC_API_URL`, the token key and workspace strategy in `.env.local`. Choose **Live MSFLib account** at login/register. `/workspace` exposes organization selection/creation, profile creation/editing/avatar/account lookup, real document upload/retrieval/download/ingestion, AI evaluation/chat/streaming and notification management. `/account` provides recovery/reset and optionally OTP (`NEXT_PUBLIC_ENABLE_OTP=true` only if supported).
+Configure `API_URL`, the token key and workspace strategy in `.env.local`. Choose **Live MSFLib account** at login/register. `/workspace` exposes organization selection/creation, profile creation/editing/avatar/account lookup, real document upload/retrieval/download/ingestion, AI evaluation/chat/streaming and notification management. `/account` provides recovery/reset and optionally OTP (`NEXT_PUBLIC_ENABLE_OTP=true` only if supported).
 
 Live integrations need an actual compatible API. Existing `.env.local` points to `/api`, but this shell supplies no backend there. Configure a working API before claiming live functionality. Do not use real credentials in demo registration.
 
