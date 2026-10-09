@@ -2,10 +2,12 @@
 import Link from 'next/link';
 import { MapPin } from 'lucide-react';
 import { DataTable, type Column } from '@/components/msflib/data-table';
-import { money, type Tender, type Role } from '@/lib/prototype';
+import { money, type Role } from '@/lib/prototype';
+import type { TenderSummary } from '@/lib/api/tenders';
 
 const statusStyles: Record<string, string> = {
   open: 'bg-emerald-50 text-emerald-700 ring-emerald-600/20',
+  active: 'bg-emerald-50 text-emerald-700 ring-emerald-600/20',
   draft: 'bg-slate-100 text-slate-600 ring-slate-500/20',
   closed: 'bg-amber-50 text-amber-700 ring-amber-600/20',
   awarded: 'bg-blue-50 text-blue-700 ring-blue-600/20',
@@ -31,11 +33,11 @@ export function TenderTable({
   role,
   title,
 }: {
-  tenders: Tender[];
+  tenders: TenderSummary[];
   role: Role;
   title: string;
 }) {
-  const columns: Column<Tender>[] = [
+  const columns: Column<TenderSummary>[] = [
     {
       field: 'title',
       headerName: 'Tender',

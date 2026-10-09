@@ -6,7 +6,7 @@ import { useEffect, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { getMyOnboarding, hasCompletedOnboarding, onboardBuyer, onboardVendor, type OnboardingDetails } from '@/lib/api/onboarding';
 import { useAuth } from '@msflib/react-auth';
-import { Loading } from '@/components/ui/shared';
+import { PageLoader } from '@/components/ui/page-loader';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
@@ -90,7 +90,7 @@ export function Onboarding({ role }: { role: 'buyer' | 'vendor' }) {
   useEffect(() => {
     if (complete) router.replace(role === 'vendor' ? '/vendor/dashboard' : '/dashboard');
   }, [complete, role, router]);
-  if (complete || auth.status === 'loading' || (auth.status === 'authenticated' && existing.isPending)) return <Loading />;
+  if (complete || auth.status === 'loading' || (auth.status === 'authenticated' && existing.isPending)) return <PageLoader label="Preparing your account…" />;
   return <OnboardingForm key={`${role}-${auth.me?.id || 'demo'}`} role={role} existing={existing.data || null} loadError={existing.isError} retry={() => void existing.refetch()} />;
 }
 
@@ -122,7 +122,7 @@ function OnboardingForm({ role, existing, loadError, retry }: { role: 'buyer' | 
     if (value) notify(value, 'error');
   }
 
-  if (!a && auth.status === 'loading') return <Loading />;
+  if (!a && auth.status === 'loading') return <PageLoader label="Preparing your account…" />;
 
   if (!a)
     return (

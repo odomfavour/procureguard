@@ -1,5 +1,9 @@
 'use client';
 import Link from 'next/link';
+import { useQuery } from '@tanstack/react-query';
+import { listTenders } from '@/lib/api/tenders';
+import { Loading } from '@/components/ui/shared';
+import { PageLoader } from '@/components/ui/page-loader';
 import { useAuth } from '@msflib/react-auth';
 import {
   ArrowRight,
@@ -26,12 +30,17 @@ type Stat = {
 export function Dashboard({ role }: { role: 'buyer' | 'vendor' }) {
   const auth = useAuth();
   const isLive = auth.status === 'authenticated';
+  const query = useQuery({
+    queryKey: ['procureguard', 'tenders', auth.me?.id, role, 'dashboard'],
+    queryFn: () => listTenders({ role, limit: 20 }),
+    enabled: isLive,
+  });
   const { db: localDb } = useData();
   const db = isLive && localDb ? { ...localDb, tenders: [], applications: [], orders: [] } : localDb;
   const a = isLive ? { id: String(auth.me?.id), name: auth.me?.username || auth.me?.email || '' } : db?.accounts.find((x) => x.id === session());
-  if (!db || !a) return null;
+  if (!db || !a) return <Portal role={role}><PageLoader fullPage={false} /></Portal>;
   const buyer = role === 'buyer';
-  const tenders = buyer
+  const tenders = isLive ? query.data?.tenders || [] : buyer
     ? db.tenders.filter((t) => t.buyerId === a.id)
     : db.tenders.filter((t) => t.status === 'open');
   const apps = buyer
@@ -48,8 +57,8 @@ export function Dashboard({ role }: { role: 'buyer' | 'vendor' }) {
   const stats: Stat[] = [
     {
       label: buyer ? 'Your tenders' : 'Open tenders',
-      count: tenders.length,
-      hint: buyer ? 'Tenders you have published' : 'Currently accepting bids',
+      count: isLive ? query.data?.total ?? tenders.length : tenders.length,
+      hint: isLive && query.data?.total === undefined ? 'Tenders on the first page' : buyer ? 'Tenders you have published' : 'Currently accepting bids',
       icon: FileText,
     },
     {
@@ -98,7 +107,7 @@ export function Dashboard({ role }: { role: 'buyer' | 'vendor' }) {
               <div className="min-w-0">
                 <p className="text-sm font-medium text-ink-soft">{label}</p>
                 <p className="mt-2 text-3xl font-bold tracking-tight">
-                  {count}
+                  {isLive && label === (buyer ? 'Your tenders' : 'Open tenders') && (query.isPending || query.isError) ? '—' : count}
                 </p>
               </div>
               <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand/10 text-brand">
@@ -113,7 +122,9 @@ export function Dashboard({ role }: { role: 'buyer' | 'vendor' }) {
       </div>
 
       <Panel title={buyer ? 'Recent tenders' : 'Available opportunities'}>
-        {tenders.length ? (
+        {isLive && query.isPending ? <Loading /> : isLive && query.isError ? (
+          <p role="alert" className="py-6 text-risk-high">{query.error.message} <button type="button" className="underline" onClick={() => void query.refetch()}>Retry</button></p>
+        ) : tenders.length ? (
           <TenderTable
             tenders={tenders}
             role={role}
@@ -145,6 +156,7 @@ export function Dashboard({ role }: { role: 'buyer' | 'vendor' }) {
             )}
           </div>
         )}
+        {isLive && !!tenders.length && <Link className="mt-4 inline-block font-semibold text-brand hover:underline" href={buyer ? '/tenders' : '/vendor/tenders'}>View all tenders →</Link>}
       </Panel>
     </Portal>
   );
