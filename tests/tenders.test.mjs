@@ -49,3 +49,31 @@ test('malformed tender responses and invalid pagination surface errors', async (
   await assert.rejects(api.listTenders({ role: 'buyer', limit: 101 }), /pagination/);
   assert.equal(calls.length, 0);
 });
+
+
+test('tender details map requirements, documents, and active status for the application form', async () => {
+  const { api, calls } = setup({ id: 42, title: 'Office chairs', maximum_budget: '2500', status: 'active', items: [{ item: 'Chair', quantity: 5, unit: 'pieces' }], product_requirements: [{ id: 7, requirement_name: 'Warranty', value: '12 months' }], required_documents: [{ name: 'Quotation' }] });
+  const tender = await api.getTender('42');
+  assert.equal(calls[0][1], '/tenders/42');
+  assert.equal(tender.status, 'open');
+  assert.equal(tender.items[0].name, 'Chair');
+  assert.equal(tender.requirements[0].label, 'Warranty');
+  assert.equal(tender.documents[0], 'Quotation');
+});
+
+
+test('wrapped tender details response unwraps the tender rather than parsing the message', async () => {
+  const { api } = setup({ message: 'Tender details retrieved successfully.', tender: {
+    id: 1, title: 'Laptop', category: 'Laptop', procurement_type: 'Goods', maximum_budget: 180000,
+    submission_deadline: '2026-10-17T00:00:00', delivery_location: 'Test place', optional_description: 'Test', status: 'open',
+    items: [{ id: 1, item: 'Laptop', quantity: 100, unit: 'units' }],
+    product_requirements: [{ id: 1, requirement_name: 'Ram', value: '100gb' }],
+    required_documents: [{ id: 1, name: 'Quotation', description: null }],
+  } });
+  const tender = await api.getTender('1');
+  assert.equal(tender.title, 'Laptop');
+  assert.equal(tender.budget, 180000);
+  assert.equal(tender.requirements[0].label, 'Ram');
+  assert.equal(tender.documents[0], 'Quotation');
+  assert.equal(tender.items[0].quantity, 100);
+});

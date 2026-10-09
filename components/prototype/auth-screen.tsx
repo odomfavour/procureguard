@@ -1,4 +1,5 @@
 'use client';
+import { rememberTokenExpiry } from '@/lib/auth/token-expiry';
 import { getPostLoginPath } from '@/lib/api/onboarding';
 import { useToast } from '@/components/ui/toast-provider';
 
@@ -189,11 +190,12 @@ export function AuthScreen({ mode, initialLive = false, initialRole = 'buyer' }:
                   );
 
                   if (mode === 'login') {
-                    await auth.login({
+                    const loginResult = await auth.login({
                       email,
                       password,
                     });
 
+                    rememberTokenExpiry(loginResult);
                     notify('Signed in successfully.');
                     const destination = await getPostLoginPath(role);
                     router.replace(destination);

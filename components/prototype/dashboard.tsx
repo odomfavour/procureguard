@@ -1,4 +1,5 @@
 'use client';
+import { PageState } from '@/components/ui/page-state';
 import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
 import { listTenders } from '@/lib/api/tenders';
@@ -123,7 +124,7 @@ export function Dashboard({ role }: { role: 'buyer' | 'vendor' }) {
 
       <Panel title={buyer ? 'Recent tenders' : 'Available opportunities'}>
         {isLive && query.isPending ? <Loading /> : isLive && query.isError ? (
-          <p role="alert" className="py-6 text-risk-high">{query.error.message} <button type="button" className="underline" onClick={() => void query.refetch()}>Retry</button></p>
+          <PageState title="Couldn’t load tenders" onRetry={() => void query.refetch()} backHref={role === "buyer" ? "/dashboard" : "/vendor/dashboard"} backLabel="Back to dashboard" />
         ) : tenders.length ? (
           <TenderTable
             tenders={tenders}

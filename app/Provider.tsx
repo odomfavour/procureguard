@@ -1,47 +1,12 @@
 'use client';
 import React, { useState } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { AuthProvider, useAuth } from '@msflib/react-auth';
-import { WorkspaceProvider } from '@msflib/react-workspace';
-import { ProfileProvider } from '@msflib/react-profile';
-import { DocumentsProvider } from '@msflib/react-documents';
-import { AiProvider } from '@msflib/react-ai';
-import { NotificationProvider } from '@msflib/react-notification';
+import { AuthProvider } from '@msflib/react-auth';
 import { ThemeProvider } from '@/theme/Themeprovider';
-import { useActiveWorkspace } from '@msflib/react-shared';
 import { initMsflib } from '@/lib/application.config';
 import { ToastProvider } from '@/components/ui/toast-provider';
+import { SessionExpiry } from '@/components/auth/session-expiry';
 
-function Modules({ children }: { children: React.ReactNode }) {
-  const { status } = useAuth();
-  const workspace = useActiveWorkspace();
-  const options = {
-    requireAuth: true,
-    isAuthenticated:
-      status === 'authenticated' &&
-      (process.env.NEXT_PUBLIC_WORKSPACE_MODE === 'single' || !!workspace),
-    isWorkspaceScoped: true,
-  };
-  return (
-    <WorkspaceProvider
-      options={{
-        ...options,
-        isAuthenticated: status === 'authenticated',
-        pathWorkspaceScope: { available: false },
-      }}
-    >
-      <ProfileProvider options={options}>
-        <DocumentsProvider options={options}>
-          <AiProvider options={options}>
-            <NotificationProvider options={options}>
-              {children}
-            </NotificationProvider>
-          </AiProvider>
-        </DocumentsProvider>
-      </ProfileProvider>
-    </WorkspaceProvider>
-  );
-}
 export default function Providers({ children, apiURL }: { children: React.ReactNode; apiURL: string }) {
   initMsflib(apiURL);
   const [client] = useState(
@@ -55,7 +20,8 @@ export default function Providers({ children, apiURL }: { children: React.ReactN
       <ThemeProvider>
         <ToastProvider>
         <AuthProvider options={{ isWorkspaceScoped: false }}>
-          <Modules>{children}</Modules>
+          <SessionExpiry />
+          {children}
         </AuthProvider>
         </ToastProvider>
       </ThemeProvider>

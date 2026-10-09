@@ -1,4 +1,5 @@
 'use client';
+import { rememberTokenExpiry } from '@/lib/auth/token-expiry';
 import { getPostLoginPath } from '@/lib/api/onboarding';
 import { useToast } from '@/components/ui/toast-provider';
 import { useState } from 'react';
@@ -61,11 +62,12 @@ export default function AuthScreen({ initialMode }: { initialMode: Mode }) {
     try {
       const email = requiredText(values.email, 'Email');
       if (mode === 'login') {
-        await auth.login({
+        const loginResult = await auth.login({
           email,
           password: requiredText(values.password, 'Password'),
         });
-        notify('Signed in successfully.');
+        rememberTokenExpiry(loginResult);
+                    notify('Signed in successfully.');
         const destination = await getPostLoginPath();
         router.replace(destination);
       }
@@ -97,10 +99,11 @@ export default function AuthScreen({ initialMode }: { initialMode: Mode }) {
         setMessage('Password reset. Sign in to continue.');
       }
       if (mode === 'otp') {
-        await auth.verifyOtp({
+        const otpResult = await auth.verifyOtp({
           email,
           code: requiredText(code, 'Verification code'),
         });
+        rememberTokenExpiry(otpResult);
         router.replace('/dashboard');
       }
     } catch (e) {

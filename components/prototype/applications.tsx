@@ -1,10 +1,13 @@
 'use client';
 import Link from 'next/link';
+import { useAuth } from '@msflib/react-auth';
+import { LiveApplications } from './live-applications';
 import { Portal, Panel, Heading } from './portal';
 import { useData, btn } from './common';
 import { session, money } from '@/lib/prototype';
 import { DataTable } from '@/components/msflib/data-table';
 export function Applications() {
+  const auth = useAuth();
   const { db } = useData();
   const a = session();
   const rows = (db?.applications.filter((x) => x.vendorId === a) || []).map(
@@ -13,6 +16,7 @@ export function Applications() {
       title: db?.tenders.find((t) => t.id === x.tenderId)?.title || 'Tender',
     })
   );
+  if (auth.status === 'authenticated') return <LiveApplications />;
   return (
     <Portal role="vendor">
       <Heading

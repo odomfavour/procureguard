@@ -139,9 +139,11 @@ export function Portal({
             </button>
           </div>
         </header>
-        <div className="border-b border-line bg-brand-tint px-5 py-2 text-xs text-brand sm:px-8">
-          {isLive ? 'Signed in · Live tenders · Applications and orders are not yet connected to the backend.' : <>Demo workspace · Local browser data · AI, document verification and escrow are simulated.</>}
-        </div>
+        {!isLive && (
+          <div className="border-b border-line bg-brand-tint px-5 py-2 text-xs text-brand sm:px-8">
+            Demo workspace · Local browser data · AI, document verification and escrow are simulated.
+          </div>
+        )}
         <main className="mx-auto max-w-6xl p-5 sm:p-8">{children}</main>
       </div>
     </div>

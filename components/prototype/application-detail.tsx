@@ -1,5 +1,8 @@
 'use client';
+import { PageState } from '@/components/ui/page-state';
 import Link from 'next/link';
+import { useAuth } from '@msflib/react-auth';
+import { LiveApplicationDetail } from './live-applications';
 import { DataTable } from '@/components/msflib/data-table';
 import { Assessment } from './assessment';
 import { useParams } from 'next/navigation';
@@ -7,11 +10,14 @@ import { analyze, money } from '@/lib/prototype';
 import { Portal, Panel, Heading } from './portal';
 import { useData, btn } from './common';
 export function ApplicationDetail() {
+  const auth = useAuth();
   const { id } = useParams<{ id: string }>();
   const { db, update } = useData();
   const a = db?.applications.find((x) => x.id === id);
   const t = db?.tenders.find((x) => x.id === a?.tenderId);
   const vendor = db?.accounts.find((x) => x.id === a?.vendorId);
+  if (auth.status === 'authenticated') return <LiveApplicationDetail id={id} role="buyer" />;
+  if (db && (!a || !t)) return <Portal role="buyer"><PageState kind="not-found" title="Application not found" backHref="/tenders" backLabel="Back to tenders" /></Portal>;
   if (!a || !t) return null;
   return (
     <Portal role="buyer">

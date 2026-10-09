@@ -1,6 +1,31 @@
 'use client';
 
 import { configuredApiClient } from '@msflib/core';
+import type { Tender } from '@/lib/prototype';
+
+export function apiId(id: string) {
+  if (!/^\d+$/.test(id)) throw new Error('Invalid record ID.');
+  return id;
+}
+
+export async function getTender(id: string): Promise<Tender> {
+  const { apiClient } = configuredApiClient({ isWorkspaceScoped: false });
+  const response = await apiClient<unknown>('GET', `/tenders/${apiId(id)}`);
+  const envelope = record(response);
+  const row = record(envelope?.tender) ?? envelope;
+  if (!row) throw new Error('Unexpected tender detail response.');
+  const summary = parseTenderPage([row]).tenders[0];
+  const objects = (value: unknown) => Array.isArray(value) ? value.map(record).filter((entry): entry is Record<string, unknown> => !!entry) : [];
+  return {
+    ...summary,
+    status: (summary.status === 'active' ? 'open' : summary.status) as Tender['status'],
+    buyerId: String(row.buyer_id ?? ''),
+    description: String(row.optional_description ?? row.description ?? ''),
+    items: objects(row.items).map((entry) => ({ name: String(entry.item ?? entry.name ?? ''), quantity: Number(entry.quantity), unit: String(entry.unit ?? '') })),
+    requirements: objects(row.product_requirements ?? row.requirements).map((entry, index) => ({ id: String(entry.id ?? index), label: String(entry.requirement_name ?? entry.label ?? ''), value: String(entry.value ?? '') })),
+    documents: Array.isArray(row.required_documents ?? row.documents) ? ((row.required_documents ?? row.documents) as unknown[]).map((entry) => typeof entry === 'string' ? entry : String(record(entry)?.name ?? '')).filter(Boolean) : [],
+  };
+}
 
 export type TenderSummary = {
   id: string;

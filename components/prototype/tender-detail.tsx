@@ -1,18 +1,18 @@
 'use client';
+import { PageState, isNotFoundError } from '@/components/ui/page-state';
 
 import Link from 'next/link';
+import { useAuth } from '@msflib/react-auth';
+import { useQuery } from '@tanstack/react-query';
+import { getTender } from '@/lib/api/tenders';
+import { Loading } from '@/components/ui/shared';
 import { useParams } from 'next/navigation';
 import {
   ArrowLeft,
   ArrowRight,
   CalendarDays,
-  MapPin,
-  Wallet,
   Package,
   FileText,
-  ShieldCheck,
-  AlertTriangle,
-  CheckCircle2,
   Clock3,
   Scale,
 } from 'lucide-react';
@@ -126,18 +126,23 @@ function ScoreIndicator({ score }: { score: number }) {
 }
 
 export function TenderDetail({ role }: { role: TenderRole }) {
+  const auth = useAuth();
+  const live = auth.status === 'authenticated';
   const { db, update } = useData();
   const params = useParams();
 
   const id = String(params.id || params.tenderId);
 
-  const tender = db?.tenders.find((item) => item.id === id);
+  const query = useQuery({ queryKey: ['procureguard', 'tenders', auth.me?.id, id], queryFn: () => getTender(id), enabled: live });
+  const tender = live ? query.data : db?.tenders.find((item) => item.id === id);
 
   const applications =
-    db?.applications.filter((item) => item.tenderId === id) ?? [];
+    live ? [] : db?.applications.filter((item) => item.tenderId === id) ?? [];
 
+  if (live && query.isError) return <Portal role={role}><PageState kind={isNotFoundError(query.error) ? "not-found" : "error"} title={isNotFoundError(query.error) ? "Tender not found" : "Couldn’t load this tender"} onRetry={isNotFoundError(query.error) ? undefined : () => void query.refetch()} backHref={role === "buyer" ? "/tenders" : "/vendor/tenders"} backLabel="Back to tenders" /></Portal>;
+  if (!live && db && !tender) return <Portal role={role}><PageState kind="not-found" title="Tender not found" backHref={role === "buyer" ? "/tenders" : "/vendor/tenders"} backLabel="Back to tenders" /></Portal>;
   if (!db || !tender) {
-    return <div className="p-10">Loading tender…</div>;
+    return <Portal role={role}><Loading /></Portal>;
   }
 
   const isBuyer = role === 'buyer';
@@ -251,7 +256,7 @@ export function TenderDetail({ role }: { role: TenderRole }) {
           )}
 
         {/* Applications */}
-        {isBuyer && (
+        {isBuyer && !live && (
           <SectionCard
             title={`Vendor comparison (${applications.length})`}
             subtitle="Vendors are ranked by their evaluation score, not by price."

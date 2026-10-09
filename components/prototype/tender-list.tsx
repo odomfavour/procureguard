@@ -1,4 +1,5 @@
 'use client';
+import { PageState } from '@/components/ui/page-state';
 import Link from 'next/link';
 import { useState } from 'react';
 import { useAuth } from '@msflib/react-auth';
@@ -36,7 +37,10 @@ export function TenderList({ role }: { role: 'buyer' | 'vendor' }) {
         }
         action={
           role === 'buyer' ? (
-            <Link className={btn} href="/tenders/new">
+            <Link
+              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-brand px-5 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-brand-deep focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+              href="/tenders/new"
+            >
               + Create tender
             </Link>
           ) : undefined
@@ -54,7 +58,7 @@ export function TenderList({ role }: { role: 'buyer' | 'vendor' }) {
           </label>
         )}
         {live && query.isPending ? <Loading /> : live && query.isError ? (
-          <p role="alert" className="py-6 text-risk-high">{query.error.message} <button type="button" className="underline" onClick={() => void query.refetch()}>Retry</button></p>
+          <PageState title="Couldn’t load tenders" onRetry={() => void query.refetch()} backHref={role === "buyer" ? "/dashboard" : "/vendor/dashboard"} backLabel="Back to dashboard" />
         ) : <>
         <TenderTable
           tenders={ts}
