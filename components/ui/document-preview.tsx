@@ -1,9 +1,8 @@
 'use client';
+import type { PreviewDocument } from '@/types/documents';
 
 import { Dialog, DialogContent, DialogTitle, IconButton } from '@mui/material';
 import { X } from 'lucide-react';
-
-export type PreviewDocument = { name: string; url: string | null; format: string };
 
 export function DocumentPreview({ document, onClose }: { document: PreviewDocument | null; onClose: () => void }) {
   const format = document?.format.toLowerCase() || document?.url?.split('?')[0].split('.').pop()?.toLowerCase();

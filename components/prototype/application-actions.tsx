@@ -5,7 +5,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { AnalysisReport } from './analysis-report';
 import { Dialog, DialogTitle, DialogContent, DialogActions, Button } from '@mui/material';
 import { acceptApplication, analyzeApplicant, checkoutUrl, getApplicantAnalysis } from '@/lib/api/procurement-analysis';
-import type { ApplicationRecord } from '@/lib/api/applications';
+import type { ApplicationRecord } from '@/types/api/applications';
 import { useToast } from '@/components/ui/toast-provider';
 import { Loading } from '@/components/ui/shared';
 import { money } from '@/lib/prototype';
@@ -24,6 +24,7 @@ export function ApplicationActions({ application }: { application: ApplicationRe
   const lock = useRef(false);
   const queryKey = ['procureguard', 'analysis', auth.me?.id, application.id];
   const analysis = useQuery({ queryKey, queryFn: () => getApplicantAnalysis(application.id), retry: false });
+  const hasAnalysis = !!analysis.data && !analysis.isPending && !analysis.isError;
   async function runAnalysis() {
     if (analyzing) return;
     setAnalyzing(true); setError('');
@@ -38,7 +39,7 @@ export function ApplicationActions({ application }: { application: ApplicationRe
     } finally { setAnalyzing(false); }
   }
   async function accept() {
-    if (lock.current) return;
+    if (lock.current || !hasAnalysis) return;
     lock.current = true; setAccepting(true); setError('');
     try {
       const callback = new URL('/payments/callback', window.location.origin);
@@ -62,11 +63,11 @@ export function ApplicationActions({ application }: { application: ApplicationRe
       <Action disabled={analyzing || accepting} onClick={() => void runAnalysis()}>{analyzing ? 'Analyzing applicant…' : analysis.data ? 'Run analysis again' : 'Analyze applicant'}</Action>
       <div className="mt-5">{analysis.isPending ? <Loading /> : analysis.isError ? <p role="alert" className="text-sm text-risk-high">{analysis.error.message} <button className="underline" onClick={() => void analysis.refetch()}>Retry loading analysis</button></p> : <AnalysisReport value={analysis.data} />}</div>
     </Panel>
-    <Panel title="Accept & fund escrow" subtitle="Accept this application and continue to Paystack checkout. The vendor can ship once the backend verifies escrow funding.">
-      {error && <p role="alert" className="mb-4 text-sm text-risk-high">{error}</p>}
+    {error && <p role="alert" className="text-sm text-risk-high">{error}</p>}
+    {hasAnalysis && <Panel title="Accept & fund escrow" subtitle="Accept this application and continue to Paystack checkout. The vendor can ship once the backend verifies escrow funding.">
       {paymentUrl ? <a className="inline-flex rounded-lg bg-brand px-5 py-3 text-sm font-semibold text-white hover:bg-brand-deep" href={paymentUrl}>Continue to Paystack</a> : <Action disabled={!canAccept || accepting || analyzing} onClick={() => setConfirm(true)}>{accepting ? 'Starting checkout…' : accepted ? 'Application accepted' : 'Accept application'}</Action>}
-    </Panel>
-    <Dialog open={confirm} onClose={() => { if (!accepting) setConfirm(false); }} aria-labelledby="accept-application-title">
+    </Panel>}
+    <Dialog open={confirm && hasAnalysis} onClose={() => { if (!accepting) setConfirm(false); }} aria-labelledby="accept-application-title">
       <DialogTitle id="accept-application-title">Accept this application?</DialogTitle>
       <DialogContent><p>Accept {application.vendorName || 'this vendor'} for {application.title}{application.price === null ? '' : ` at ${money(application.price)}`} and start escrow checkout. Payment is completed on Paystack.</p></DialogContent>
       <DialogActions><Button disabled={accepting} onClick={() => setConfirm(false)}>Cancel</Button><Button variant="contained" disabled={accepting} onClick={() => void accept()}>{accepting ? 'Starting checkout…' : 'Accept & start checkout'}</Button></DialogActions>

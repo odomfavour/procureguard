@@ -1,7 +1,8 @@
 'use client';
 import { useAuth } from '@msflib/react-auth';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { getPayment, type PaymentRecord } from '@/lib/api/payments';
+import { getPayment } from '@/lib/api/payments';
+import type { PaymentRecord } from '@/types/api/payments';
 import { verifyPayment } from '@/lib/api/procurement-analysis';
 import { useState } from 'react';
 import { useToast } from '@/components/ui/toast-provider';

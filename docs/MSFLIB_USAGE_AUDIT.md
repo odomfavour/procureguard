@@ -1,30 +1,46 @@
 # MSFLib usage audit
 
-UI baseline: **procureguard-updated.zip**. “Working code” below means executable integration is wired to an interaction, not proof that an unavailable backend succeeded. Production build/type/lint and focused domain tests do not replace browser or backend testing.
+Reviewed against current routes/providers on 12 October 2026. Imports and executable adapters establish source integration, not successful backend operation or compatibility with all documented server contracts.
 
-| Package | Export/hook | Imported in | Feature / demonstration | Functional status | Real backend | Outstanding issues |
-|---|---|---|---|---|---|---|
-| `@msflib/core` | `configureApplication` | `lib/application.config.ts` | Configure URL, token key and workspace decorator | Configured | Client configuration | Supply compatible API URL |
-| `@msflib/core` | `setActiveWorkspace` | `components/integration/WorkspacePanel.tsx`, `LivePortal.tsx` | Select available organization; clear on logout | Wired | Backend-dependent | Membership enforcement remains server-side |
-| `@msflib/react-shared` | `useActiveWorkspace` | `app/Provider.tsx`, `components/integration/WorkspacePanel.tsx`, `LivePortal.tsx` | Active workspace UI, query gating and remounting | Wired | Shared runtime | Multi-organization network test pending |
-| `@msflib/react-auth` | `AuthProvider`, `useAuth` | `app/Provider.tsx`, `components/prototype/auth-screen.tsx`, `components/auth/AuthScreen.tsx`, `components/integration/LivePortal.tsx` | Live login/register/session/logout; `/account` recovery/reset/OTP | Wired, not network-verified | Yes, when API supplied | Auth endpoints and OTP capability must match backend |
-| `@msflib/react-workspace` | `WorkspaceProvider`, `useWorkspace`, `workspaceHookDecorator` | `app/Provider.tsx`, `components/integration/WorkspacePanel.tsx`, `lib/application.config.ts` | Available organizations, multipart creation, switching and request scoping | Wired, not network-verified | Yes, when API supplied | Real membership/tenancy checks pending |
-| `@msflib/react-profile` | `ProfileProvider`, `useProfile` | `app/Provider.tsx`, `components/integration/ProfilePanel.tsx` | Create/edit profile, upload avatar, view account profile | Wired, not network-verified | Yes, when API supplied | Required profile fields/permissions need backend verification |
-| `@msflib/react-documents` | `DocumentsProvider`, `useDocuments` | `app/Provider.tsx`, `components/integration/DocumentsPanel.tsx`, `AiPanel.tsx` | Upload, list/get, download Blob, explicit corpus sharing, ingestion status/jobs | Wired, not network-verified | Yes, when API supplied | Storage/worker/backend needed; fixture filenames are separate |
-| `@msflib/react-ai` | `AiProvider`, `useLlm`, `useAgent`, `readAskStream` | `app/Provider.tsx`, `components/integration/AiPanel.tsx` | Buyer evaluation, source-scoped questions, conversations, streamed agent responses | Wired, not network-verified | Yes, when API supplied | Indexed documents, model and stream protocol needed |
-| `@msflib/react-notification` | `NotificationProvider`, `useNotification` | `app/Provider.tsx`, `components/integration/LivePortal.tsx` | Read/unread, mark all, mark one, delete; mutation callbacks surface errors | Wired, not network-verified | Yes, when API supplied | Backend notification producers not supplied |
-| `@msflib/react-components/formbuilder` | default `FormBuilder` | `components/msflib/form-builder.tsx`; consumers in `components/prototype/{auth-screen,onboarding,create-tender,apply,vault}.tsx` and live profile/auth forms | Fill/register, onboard, configure tender, enter quote, save document metadata | Executable local/live UI | Demo or live hook according to screen | Installed library accesses `window` at render; dedicated client-only adapter handles SSR |
-| `@msflib/react-components/table` | default `TableWidget` | `components/msflib/data-table.tsx`; consumers `components/prototype/{tender-table,compare,applications,tender-detail,application-detail,orders,notifications}.tsx`, `components/integration/LivePortal.tsx`, and legacy vendor tables | Search/sort/page tenders, applications, order register, notifications, deliverables, requirements and document metadata; compare bids and select winner | Executable demo UI | Demo/legacy rows are fixtures; live notifications use the backend | Manual browser verification pending |
-| `@msflib/react-components/draggable` | default `DraggableList` | `components/prototype/create-tender.tsx`, `components/tenders/tender-form.tsx` | Drag deliverables; published item order retained | Executable demo UI | No | Browser keyboard/pointer verification pending |
-| `@msflib/react-components/tree-view` | `TreeView` | `components/prototype/vault.tsx`, `components/integration/DocumentsPanel.tsx`, `components/vendors/document-vault.tsx` | Expand business files, select metadata, remove demo entry / retrieve live record | Executable UI | Demo filenames / live API | Demo files contain no original bytes |
-| `@msflib/react-components/chat-ui` | default `ChatBox` | `components/prototype/assessment.tsx`, `components/integration/AiPanel.tsx` | Ask about deterministic demo findings / live grounded questions | Executable demo; live wired | Demo no; live API yes when supplied | Demo responses explicitly identify simulation |
-| `@msflib/react-components/markdown` | `MarkdownMessage` | `components/prototype/assessment.tsx`, `components/integration/AiPanel.tsx` | Render assessment or real AI report/evidence | Executable UI | Depends on source | Claims/evidence require human review |
-| `@msflib/react-components/resizable-pane` | `ResizablePane` | `components/prototype/assessment.tsx`, `components/integration/AiPanel.tsx` | Resize assessment/report/chat panes | Executable UI | No dependency | Manual responsive interaction check pending |
-| `@msflib/react-components/otp-input` | default `OtpInput` | `components/auth/AuthScreen.tsx` | `/account` → OTP when enabled; `verifyOtp` | Implemented, capability-gated | Requires supporting auth backend | Off by default; set enable flag only when supported |
-| `@msflib/react-components/skeleton` | `AppSkeleton` | `components/ui/shared.tsx` | FormBuilder dynamic load and session placeholders | Executable UI | No | None known |
+## Current routed integrations
 
-## MSFLib Integration Showcase
+| Package/export | Source | Current use / limit |
+|---|---|---|
+| `@msflib/core`: `configureApplication` | `lib/application.config.ts` | API URL, token key, auth endpoint mappings and optional workspace decorator |
+| `@msflib/core`: `configuredApiClient` | `lib/api/{onboarding,tenders,applications,procurement-analysis,payments,orders,notifications}.ts` | Authenticated API and multipart requests for the main procurement journey; explicitly `isWorkspaceScoped: false` |
+| `@msflib/core`: storage/config/workspace reset | `components/auth/session-expiry.tsx`, prototype portal | Session expiry cleanup and logout support |
+| `@msflib/react-auth`: `AuthProvider`, `useAuth` | `app/Provider.tsx`, authentication and portal components | Root auth provider; live registration/login/session/logout and account assistance |
+| `@msflib/react-components/formbuilder`: `FormBuilder` | `components/msflib/form-builder.tsx` and prototype form consumers | Auth, onboarding, tender and application forms; client-only adapter avoids SSR access to `window` |
+| `@msflib/react-components/table`: `TableWidget` | `components/msflib/data-table.tsx` and prototype consumers | Tender/application listings, structured analysis details, order records and notifications |
+| `@msflib/react-components/draggable`: `DraggableList` | `components/prototype/create-tender.tsx` | Reorder deliverables before tender submission |
+| `@msflib/react-components/markdown`: `MarkdownMessage` | `components/prototype/analysis-report.tsx` | Render backend assessment strings; structured reports use tables and section controls |
+| `@msflib/react-components/tree-view`: `TreeView` | `components/prototype/vault.tsx` | Local document filename metadata; no live upload/download through this vault |
+| `@msflib/react-components/otp-input`: `OtpInput` | `components/auth/AuthScreen.tsx` | `/account` verification, only when OTP configuration and backend support it |
+| `@msflib/react-components/skeleton`: `AppSkeleton` | `components/ui/shared.tsx` | Loading placeholders, including dynamic FormBuilder loading |
 
-The original landing page and navy portal shell remain the product's visual foundation. FormBuilder supplies meaningful inputs inside those layouts; DraggableList determines the published deliverable order. TableWidget powers tender listings (including dashboard overviews), application tracking, vendor selection, order registers, notifications and structured detail lists. Order row actions select the existing fulfillment and escrow detail panel. Tree navigation and timelines retain their purpose-built controls. TreeView organizes business documents for reuse in applications. Buyers trigger assessments and review them through MarkdownMessage, ChatBox and ResizablePane.
+## Retained source, not a routed standalone feature
 
-In live mode, AuthProvider validates the account; WorkspaceProvider supplies memberships, core switches scope, and react-shared subscriptions update consumers. Auth-gated profile/documents/AI/notification providers use the configured client and workspace-aware query keys. Workspace changes cancel/remove prior scoped query state and remount live module screens. Live document sharing is explicit before corpus use. Demo login, filenames, advisory analysis and simulated escrow remain a separate repository and never impersonate live APIs.
+`components/integration/LivePortal.tsx` has no current route consumer. `/workspace` redirects to `/dashboard` or `/vendor/dashboard`, or to login without authentication. The root provider mounts `AuthProvider`; it does not mount workspace/profile/documents/AI/notification providers.
+
+| Package/export | Retained source | Status |
+|---|---|---|
+| `@msflib/react-workspace`: `useWorkspace`, `workspaceHookDecorator` | `WorkspacePanel.tsx`, application config | Panel not routed; decorator remains configurable |
+| `@msflib/react-shared`: `useActiveWorkspace` | `WorkspacePanel.tsx`, `LivePortal.tsx` | Retained standalone workspace state UI |
+| `@msflib/core`: `setActiveWorkspace` | Workspace panel, LivePortal, logout/expiry | Selection UI not routed; cleanup remains in current flow |
+| `@msflib/react-profile`: `useProfile` | `ProfilePanel.tsx` | Profile/avatar panel not routed |
+| `@msflib/react-documents`: `useDocuments` | `DocumentsPanel.tsx`, `AiPanel.tsx` | Upload/retrieval/ingestion panel not routed; current procurement uploads instead use core multipart clients |
+| `@msflib/react-ai`: `useLlm`, `useAgent`, `readAskStream` | `AiPanel.tsx` | Grounded questions/streaming panel not routed; current applicant assessment calls procurement backend endpoints |
+| `@msflib/react-notification`: `useNotification` | `LivePortal.tsx` | Panel not routed; current notifications use core API adapters |
+| ChatBox, MarkdownMessage, ResizablePane | `components/prototype/assessment.tsx`, `AiPanel.tsx` | Retained deterministic demo review / standalone AI panel; do not describe as the current live assessment journey |
+
+## Verification boundaries
+
+Main flows use MSFLib auth, core clients and reusable components rather than imports alone. This review does not confirm backend availability, multi-organization enforcement, document ingestion, model execution, payment settlement or browser usability.
+
+Local demo branches persist fixtures in browser storage; filename metadata has no original file bytes, findings/chat are deterministic and escrow is simulated. The login mode selector is currently disabled, so the former buyer/vendor demo-button instructions do not apply. Legacy reference services use separate fixtures and intentionally blocked live fallback.
+
+The README lists current modules directly. The presentation guide follows the routed buyer/vendor procurement journey; retained standalone panels require routing/provider work before they can be presented as available features.
+
+## Vendor wallet addition — 14 October 2026
+
+`components/prototype/vendor-wallet.tsx` uses the existing msflib FormBuilder adapter for the bank withdrawal form and DataTable/TableWidget for withdrawal history. `lib/api/wallet.ts` uses `configuredApiClient({ isWorkspaceScoped: false })` for all three wallet endpoints. Live response field mappings are provisional because the published schema does not define wallet or withdrawal responses; see implementation status.

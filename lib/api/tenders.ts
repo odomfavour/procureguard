@@ -1,7 +1,8 @@
 'use client';
+import type { TenderSummary, TenderPage, CreateTenderPayload } from '@/types/api/tenders';
 
 import { configuredApiClient } from '@msflib/core';
-import type { Tender } from '@/lib/prototype';
+import type { Tender } from '@/types/prototype';
 
 export function apiId(id: string) {
   if (!/^\d+$/.test(id)) throw new Error('Invalid record ID.');
@@ -26,19 +27,6 @@ export async function getTender(id: string): Promise<Tender> {
     documents: Array.isArray(row.required_documents ?? row.documents) ? ((row.required_documents ?? row.documents) as unknown[]).map((entry) => typeof entry === 'string' ? entry : String(record(entry)?.name ?? '')).filter(Boolean) : [],
   };
 }
-
-export type TenderSummary = {
-  id: string;
-  title: string;
-  category: string;
-  type: string;
-  location: string;
-  budget: number;
-  deadline: string;
-  status: string;
-};
-
-export type TenderPage = { tenders: TenderSummary[]; total?: number };
 
 function record(value: unknown): Record<string, unknown> | null {
   return value && typeof value === 'object' && !Array.isArray(value)
@@ -79,25 +67,10 @@ export async function listTenders({ role, status, offset = 0, limit = 20 }: {
   return parseTenderPage(response);
 }
 
-export type CreateTenderPayload = {
-  title: string;
-  category: string;
-  procurement_type: string;
-  maximum_budget: number;
-  submission_deadline: string;
-  delivery_location: string;
-  optional_description: string;
-  items: { item: string; quantity: number; unit: string }[];
-  product_requirements: { requirement_name: string; value: string }[];
-  required_documents: { name: string; description: string }[];
-  optional_notes: string;
-};
-
 export async function createTender(payload: CreateTenderPayload) {
   const { apiClient } = configuredApiClient({ isWorkspaceScoped: false });
   return apiClient<unknown>('POST', '/tenders', payload);
 }
-
 
 export async function listAllTenders(options: { role: 'buyer' | 'vendor'; status?: 'active' | 'closed' }) {
   const tenders: TenderSummary[] = [];

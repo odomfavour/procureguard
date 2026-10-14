@@ -1,18 +1,8 @@
 'use client';
+import type { ApplicationRecord, TenderApplicationPayload } from '@/types/api/applications';
 import { configuredApiClient } from '@msflib/core';
 import { apiId } from './tenders';
 
-export type ApplicationRecord = {
-  id: string; tenderId: string; title: string; status: string;
-  price: number | null; deliveryDays: number | null;
-  deliveryTimeline: string; proposal: string; additionalNotes: string;
-  vendorName: string; category: string; procurementType: string; maximumBudget: number | null;
-  deadline: string; location: string; submittedAt: string;
-  itemQuotes: { id: string; item: string; quantity: number | null; unit: string; unitPrice: number | null; totalPrice: number | null }[];
-  requirementResponses: { id: string; requirement: string; requiredValue: string; response: string }[];
-  responses: Record<string, string>;
-  documents: { id: string; name: string; filename: string; url: string | null; format: string; sizeBytes: number | null }[];
-};
 function object(value: unknown): Record<string, unknown> {
   return value && typeof value === 'object' && !Array.isArray(value) ? value as Record<string, unknown> : {};
 }
@@ -57,13 +47,6 @@ export function parseApplication(value: unknown): ApplicationRecord {
     documents,
   };
 }
-export type TenderApplicationPayload = {
-  item_quotes: { tender_item_id: number; unit_price: number }[];
-  requirement_responses: { requirement_id: number; response: string }[];
-  delivery_timeline: string;
-  proposal: string;
-  additional_notes: string;
-};
 
 export async function applyToTender(id: string, data: TenderApplicationPayload, documents: Record<string, File>) {
   const body = new FormData();
@@ -91,7 +74,6 @@ export async function getApplication(id: string) {
   const { apiClient } = configuredApiClient({ isWorkspaceScoped: false });
   return parseApplication(await apiClient<unknown>('GET', `/applications/${apiId(id)}`));
 }
-
 
 export async function listAllApplications(options: { tenderId?: string; status?: string } = {}) {
   const applications: ApplicationRecord[] = [];

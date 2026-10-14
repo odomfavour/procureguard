@@ -1,5 +1,6 @@
 'use client';
 import { configuredApiClient } from '@msflib/core';
+import type { PaymentRecord } from '@/types/api/payments';
 import { apiId } from './tenders';
 
 export async function getApplicantAnalysis(id: string): Promise<unknown> {
@@ -29,7 +30,7 @@ export async function acceptApplication(id: string, callbackUrl: string): Promis
   const { apiClient } = configuredApiClient({ isWorkspaceScoped: false });
   return apiClient('POST', `/applications/${apiId(id)}/accept`, { callback_url: callbackUrl });
 }
-export async function verifyPayment(reference: string): Promise<import('./payments').PaymentRecord> {
+export async function verifyPayment(reference: string): Promise<PaymentRecord> {
   if (!reference.trim()) throw new Error('Payment reference is required.');
   const { apiClient } = configuredApiClient({ isWorkspaceScoped: false });
   return apiClient('GET', `/payments/verify/${encodeURIComponent(reference)}`);

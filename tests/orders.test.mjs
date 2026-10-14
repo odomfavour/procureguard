@@ -4,6 +4,19 @@ import { readFileSync } from 'node:fs';
 import vm from 'node:vm';
 import ts from 'typescript';
 
+test('vendor shipping accepts held escrow and blocks shipped or closed orders', () => {
+  const source = readFileSync(new URL('../components/prototype/live-orders.tsx', import.meta.url), 'utf8');
+  const eligibility = source.slice(source.indexOf('  const shipped ='), source.indexOf('  const allowed ='));
+  const canShip = (status, escrowStatus) => vm.runInNewContext(`${eligibility}\ncanShip;`, { order: { status, escrowStatus } });
+  assert.equal(canShip('ready_to_ship', 'held'), true);
+  assert.equal(canShip('ready_to_ship', 'HELD'), true);
+  assert.equal(canShip('ready_to_ship', 'pending'), false);
+  assert.equal(canShip('funded', 'funded'), true);
+  for (const status of ['shipped', 'in_transit', 'delivered', 'received', 'completed', 'cancelled']) {
+    assert.equal(canShip(status, 'held'), false, status);
+  }
+});
+
 function setup(response = null) {
   const calls = [];
   const exports = {};

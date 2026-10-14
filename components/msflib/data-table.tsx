@@ -1,14 +1,7 @@
 'use client';
-import type { ReactNode } from 'react';
+import type { Column } from '@/types/data-table';
 import TableWidget from '@msflib/react-components/table';
-export type Column<Row> = {
-  field: keyof Row & string;
-  headerName: string;
-  width?: number;
-  flex?: number;
-  minWidth?: number;
-  renderCell?: (params: { row: Row }) => ReactNode;
-};
+
 export function DataTable<Row extends { id: string }>({
   rows,
   columns,

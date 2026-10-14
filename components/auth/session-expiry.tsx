@@ -43,6 +43,9 @@ export function SessionExpiry() {
       else timer = setTimeout(check, Math.min(remaining, 2_147_483_647));
     };
     const unsubscribe = client.getQueryCache().subscribe((event) => {
+      // Invalidation/refetch and observer events can retain a previous 401.
+      // Only a newly failed request should invalidate the current session.
+      if (event.type !== 'updated' || event.action.type !== 'error') return;
       const error = event.query.state.error;
       if (error && typeof error === 'object' && 'status' in error && error.status === 401) expire();
     });

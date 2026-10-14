@@ -1,9 +1,9 @@
+import type { NavItem } from '@/types/navigation';
 import {
   FileSearch,
   LayoutDashboard,
   ReceiptText,
   Scale,
-  type LucideIcon,
 } from 'lucide-react';
 import type {
   DocumentCategory,
@@ -19,12 +19,6 @@ export const APP_NAME = 'ProcureGuard';
 
 /** Flip to `false` (see .env.example) to call the FastAPI backend. */
 export const USE_MOCKS = process.env.NEXT_PUBLIC_USE_MOCKS !== 'false';
-
-export interface NavItem {
-  label: string;
-  href: string;
-  icon: LucideIcon;
-}
 
 export const NAV_ITEMS: NavItem[] = [
   { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },

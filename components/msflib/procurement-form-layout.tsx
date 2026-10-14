@@ -1,22 +1,4 @@
-import type { ComponentProps, ComponentType } from 'react';
-
-type FormElement = {
-  id: string;
-  name: string;
-  width?: number;
-  mData?: {
-    width?: number;
-  };
-};
-
-type GridFormLayoutProps = {
-  FormField: ComponentType<any>;
-  elements: FormElement[];
-  formData: Record<string, unknown>;
-  setFormData: ComponentProps<any>['setFormData'];
-  isMobile: boolean;
-  loading: boolean;
-};
+import type { GridFormLayoutProps } from '@/types/msflib';
 
 export function GridFormLayout({
   FormField,

@@ -1,11 +1,8 @@
 'use client';
+import type { OrderRecord } from '@/types/api/orders';
 import { configuredApiClient } from '@msflib/core';
 import { apiId } from './tenders';
 
-export type OrderRecord = {
-  id: string; title: string; buyer: string; vendor: string; amount: number | null;
-  status: string; escrowStatus: string; tracking: string; note: string; createdAt: string;
-};
 function object(value: unknown): Record<string, unknown> {
   return value && typeof value === 'object' && !Array.isArray(value) ? value as Record<string, unknown> : {};
 }

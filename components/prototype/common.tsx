@@ -1,6 +1,7 @@
 'use client';
 import { useMemo, useSyncExternalStore } from 'react';
-import { readDB, saveDB, type DB, snapshot } from '@/lib/prototype';
+import { readDB, saveDB, snapshot } from '@/lib/prototype';
+import type { DB } from '@/types/prototype';
 function subscribe(callback: () => void) {
   window.addEventListener('pg-updated', callback);
   window.addEventListener('storage', callback);

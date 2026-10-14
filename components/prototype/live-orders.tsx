@@ -47,7 +47,7 @@ function OrderDetail({ id, role }: { id: string; role: 'buyer' | 'vendor' }) {
   const query = useQuery({ queryKey: ['procureguard', 'orders', auth.me?.id, id], queryFn: () => getOrder(id) });
   const order = query.data;
   const shipped = !!order && ['shipped', 'in_transit', 'delivered'].includes(order.status.toLowerCase());
-  const funded = !!order && (['funded', 'paid', 'escrow_funded', 'awaiting_shipment'].includes(order.status.toLowerCase()) || order.escrowStatus === 'funded');
+  const funded = !!order && (['funded', 'paid', 'escrow_funded', 'awaiting_shipment'].includes(order.status.toLowerCase()) || ['funded', 'held'].includes(order.escrowStatus.toLowerCase()));
   const canShip = funded && !shipped && !['received', 'completed', 'cancelled'].includes(order?.status.toLowerCase() || '');
   const allowed = role === 'vendor' ? canShip : shipped;
   async function submit() {
@@ -59,6 +59,7 @@ function OrderDetail({ id, role }: { id: string; role: 'buyer' | 'vendor' }) {
       setConfirm(false); setNote(''); setTracking('');
       toast(role === 'vendor' ? 'Order marked as shipped.' : 'Receipt confirmed.');
       await client.invalidateQueries({ queryKey: ['procureguard', 'orders'] });
+      await client.invalidateQueries({ queryKey: ['procureguard', 'wallet'] });
       await client.invalidateQueries({ queryKey: ['procureguard', 'applications'] });
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Could not update order.';

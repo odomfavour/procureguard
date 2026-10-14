@@ -1,10 +1,8 @@
 'use client';
+import type { AccountNotification } from '@/types/api/notifications';
 import { configuredApiClient } from '@msflib/core';
 import { apiId } from './tenders';
-export type AccountNotification = {
-  id: string; notificationId: string; title: string; message: string; read: boolean;
-  createdAt: string; type: string; channels: string[];
-};
+
 export function parseNotification(value: unknown): AccountNotification {
   if (!value || typeof value !== 'object' || !('id' in value)) throw new Error('Invalid notification response.');
   const row = value as Record<string, unknown>;

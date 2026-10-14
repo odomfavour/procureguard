@@ -3,7 +3,7 @@ import { useState } from 'react';
 import ChatBox, { type ChatMessage } from '@msflib/react-components/chat-ui';
 import { MarkdownMessage } from '@msflib/react-components/markdown';
 import { ResizablePane } from '@msflib/react-components/resizable-pane';
-import type { Application, Tender } from '@/lib/prototype';
+import type { Application, Tender } from '@/types/prototype';
 import { Action } from './portal';
 export function Assessment({
   application: a,

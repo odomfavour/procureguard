@@ -9,7 +9,8 @@ import Link from 'next/link';
 import { useAuth } from '@msflib/react-auth';
 
 import FormBuilder from '@/components/msflib/form-builder';
-import { login, uid, type Role } from '@/lib/prototype';
+import { login, uid } from '@/lib/prototype';
+import type { Role } from '@/types/prototype';
 import { requiredText } from '@/lib/schemas/procurement';
 import { Panel } from './portal';
 import { useData } from './common';

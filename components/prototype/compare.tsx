@@ -4,7 +4,8 @@ import { useParams, useRouter } from 'next/navigation';
 import { Portal, Panel, Heading, Action } from './portal';
 import { useData } from './common';
 import { uid, notify, money } from '@/lib/prototype';
-import { DataTable, type Column } from '@/components/msflib/data-table';
+import { DataTable } from '@/components/msflib/data-table';
+import type { Column } from '@/types/data-table';
 import { Confirm, Loading } from '@/components/ui/shared';
 export function Compare() {
   const params = useParams();

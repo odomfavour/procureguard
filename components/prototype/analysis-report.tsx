@@ -3,8 +3,10 @@ import { useState } from 'react';
 import { Accordion, AccordionSummary, AccordionDetails, Tabs, Tab } from '@mui/material';
 import { ChevronDown, CheckCircle2, AlertCircle, ShieldCheck, ClipboardCheck } from 'lucide-react';
 import { MarkdownMessage } from '@msflib/react-components/markdown';
-import { DataTable, type Column } from '@/components/msflib/data-table';
-import { DocumentPreview, type PreviewDocument } from '@/components/ui/document-preview';
+import { DataTable } from '@/components/msflib/data-table';
+import type { Column } from '@/types/data-table';
+import { DocumentPreview } from '@/components/ui/document-preview';
+import type { PreviewDocument } from '@/types/documents';
 import { formatDate } from '@/utils/format-date';
 
 type RecordValue = Record<string, unknown>;

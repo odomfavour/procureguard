@@ -2,9 +2,11 @@
 import Link from 'next/link';
 import { formatDate } from '@/utils/format-date';
 import { MapPin } from 'lucide-react';
-import { DataTable, type Column } from '@/components/msflib/data-table';
-import { money, type Role } from '@/lib/prototype';
-import type { TenderSummary } from '@/lib/api/tenders';
+import { DataTable } from '@/components/msflib/data-table';
+import type { Column } from '@/types/data-table';
+import { money } from '@/lib/prototype';
+import type { Role } from '@/types/prototype';
+import type { TenderSummary } from '@/types/api/tenders';
 
 const statusStyles: Record<string, string> = {
   open: 'bg-emerald-50 text-emerald-700 ring-emerald-600/20',

@@ -59,6 +59,7 @@ export function Portal({
           ['/vendor/applications', 'My applications', FilePlus],
           ['/vendor/documents', 'Document vault', FolderOpen],
           ['/vendor/orders', 'Orders & payouts', Package],
+          ['/vendor/wallet', 'Wallet & withdrawals', Wallet],
         ] as const);
   return (
     <div className="min-h-screen bg-paper lg:flex">
