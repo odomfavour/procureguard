@@ -2,6 +2,19 @@
 
 ProcureGuard is a Next.js / React procurement frontend for buyers and vendors. Buyers publish tenders, review proposals, request applicant assessments and start escrow checkout. Vendors submit proposals and documents, track applications and record shipments. The frontend uses MSFLib for authentication, API access and reusable UI components.
 
+## Who it's for
+
+- **Buyers and procurement teams** looking to publish purchasing requirements, compare vendor proposals and track orders through delivery.
+- **Vendors and suppliers** looking to find tender opportunities, submit proposals and supporting documents, and manage awarded orders.
+
+## How it works
+
+1. **Create an account:** Register as a buyer or vendor and complete your organization or business profile.
+2. **Publish and discover tenders:** Buyers describe what they need; vendors browse opportunities and submit proposals with supporting documents.
+3. **Review and select:** Buyers review applications, request assessments and accept a proposal.
+4. **Start payment:** Buyers begin escrow checkout through a supported Paystack checkout link. Payment verification and escrow handling depend on the configured backend.
+5. **Track fulfillment:** Vendors record shipments, and buyers confirm receipt through their order pages.
+
 ## Run locally
 
 Use Node 20.9 or newer (Node 22 recommended) and pnpm. Private MSFLib packages require the `GITHUB_PACKAGES_TOKEN` referenced by `.npmrc` when installing dependencies.
